@@ -219,7 +219,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	Data **allColumnOutputData[MAX_ROW_COUNT] = { NULL };   // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 
 	const char *ALPHABET_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
-	const char *alpahNumUnder = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
+	const char *ALPHABET_NUMBER_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
 	const char *signNum = "+-0123456789"; // 全ての符号と数字です。
 	const char *num = "0123456789"; // 全ての数字です。
 	const char* space = " \t\r\n"; // 全ての空白文字です。
@@ -402,7 +402,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			}
 
 			// キーワードに識別子が区切りなしに続いていないかを確認するため、キーワードの終わった一文字あとを調べます。
-			for (search = alpahNumUnder; *search && *charactorCursol != *search; ++search){};
+			for (search = ALPHABET_NUMBER_AND_UNDERBAR; *search && *charactorCursol != *search; ++search){};
 
 			if (!*wordCursol && !*search){
 
@@ -460,7 +460,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			int wordLength = 0; // 識別子に現在読み込んでいる文字の数です。
 			do {
 				// 二文字目以降は数字も許可して文字の種類を確認します。
-				for (search = alpahNumUnder; *search && *charactorCursol != *search; ++search){};
+				for (search = ALPHABET_NUMBER_AND_UNDERBAR; *search && *charactorCursol != *search; ++search){};
 				if (*search){
 					if (MAX_WORD_LENGTH - 1 <= wordLength){
 						error = ERR_MEMORY_OVER;
