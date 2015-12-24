@@ -14,6 +14,12 @@
 #define MAX_ROW_COUNT 256                  //!< 入出力されるデータに含まれる行の最大数です。
 #define MAX_TABLE_COUNT 8                  //!< CSVとして入力されるテーブルの最大数です。
 #define MAX_EXTENSION_TREE_NODE_COUNT 256  //!< WHERE句に指定される式木のノードの最大数です。
+const char *ALPHABET_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
+const char *ALPHABET_NUMBER_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
+const char *SIGNED_AND_NUMBER = "+-0123456789"; // 全ての符号と数字です。
+const char *NUMBER = "0123456789"; // 全ての数字です。
+const char* SPACE = " \t\r\n"; // 全ての空白文字です。
+
 
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 //! @param [in] sql 実行するSQLです。
@@ -217,12 +223,6 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 	Data **input_data[MAX_TABLE_COUNT][MAX_ROW_COUNT];       // 入力データです。
 	Data **output_data[MAX_ROW_COUNT] = { NULL };            // 出力データです。
 	Data **all_column_output_data[MAX_ROW_COUNT] = { NULL };   // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
-
-	const char *ALPHABET_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
-	const char *ALPHABET_NUMBER_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
-	const char *SIGNED_AND_NUMBER = "+-0123456789"; // 全ての符号と数字です。
-	const char *NUMBER = "0123456789"; // 全ての数字です。
-	const char* SPACE = " \t\r\n"; // 全ての空白文字です。
 
 	// inputDataを初期化します。
 	for (size_t i = 0; i < sizeof(input_data) / sizeof(input_data[0]); i++)
