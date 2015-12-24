@@ -205,18 +205,18 @@ typedef struct
 //! SELECT USERS.NAME, CHILDREN.NAME                                                                         @n
 //! WHERE USERS.ID = CHILDREN.PARENTID                                                                       @n
 //! FROM USERS, CHILDREN                                                                                     @n
-int ExecuteSQL(const char* sql, const char* outputFileName)
+int ExecuteSQL(const char* sql, const char* output_file_name)
 {
 	enum RESULT_VALUE error = OK;                           // 発生したエラーの種類です。
-	FILE *inputTableFiles[MAX_TABLE_COUNT] = { NULL };      // 読み込む入力ファイルの全てのファイルポインタです。
-	FILE *outputFile = NULL;                                // 書き込むファイルのファイルポインタです。
+	FILE *input_table_files[MAX_TABLE_COUNT] = { NULL };      // 読み込む入力ファイルの全てのファイルポインタです。
+	FILE *output_file = NULL;                                // 書き込むファイルのファイルポインタです。
 	int result = 0;                                         // 関数の戻り値を一時的に保存します。
 	bool found = false;                                     // 検索時に見つかったかどうかの結果を一時的に保存します。
 	const char *search = NULL;                              // 文字列検索に利用するポインタです。
-	Data ***currentRow = NULL;                              // データ検索時に現在見ている行を表します。
-	Data **inputData[MAX_TABLE_COUNT][MAX_ROW_COUNT];       // 入力データです。
-	Data **outputData[MAX_ROW_COUNT] = { NULL };            // 出力データです。
-	Data **allColumnOutputData[MAX_ROW_COUNT] = { NULL };   // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
+	Data ***current_row = NULL;                              // データ検索時に現在見ている行を表します。
+	Data **input_data[MAX_TABLE_COUNT][MAX_ROW_COUNT];       // 入力データです。
+	Data **output_data[MAX_ROW_COUNT] = { NULL };            // 出力データです。
+	Data **all_column_output_data[MAX_ROW_COUNT] = { NULL };   // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 
 	const char *ALPHABET_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
 	const char *ALPHABET_NUMBER_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
@@ -225,10 +225,10 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	const char* SPACE = " \t\r\n"; // 全ての空白文字です。
 
 	// inputDataを初期化します。
-	for (size_t i = 0; i < sizeof(inputData) / sizeof(inputData[0]); i++)
+	for (size_t i = 0; i < sizeof(input_data) / sizeof(input_data[0]); i++)
 	{
-		for (size_t j = 0; j < sizeof(inputData[0]) / sizeof(inputData[0][0]); j++){
-			inputData[i][j] = NULL;
+		for (size_t j = 0; j < sizeof(input_data[0]) / sizeof(input_data[0][0]); j++){
+			input_data[i][j] = NULL;
 		}
 	}
 
@@ -892,15 +892,15 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		strncat(fileName, csvExtension, MAX_WORD_LENGTH + sizeof(csvExtension) - 1);
 
 		// 入力ファイルを開きます。
-		inputTableFiles[i] = fopen(fileName, "r");
-		if (!inputTableFiles[i]){
+		input_table_files[i] = fopen(fileName, "r");
+		if (!input_table_files[i]){
 			error = ERR_FILE_OPEN;
 			goto ERROR;
 		}
 
 		// 入力CSVのヘッダ行を読み込みます。
 		char inputLine[MAX_FILE_LINE_LENGTH] = ""; // ファイルから読み込んだ行文字列です。
-		if (fgets(inputLine, MAX_FILE_LINE_LENGTH, inputTableFiles[i])){
+		if (fgets(inputLine, MAX_FILE_LINE_LENGTH, input_table_files[i])){
 			charactorCursol = inputLine;
 
 			// 読み込んだ行を最後まで読みます。
@@ -930,12 +930,12 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		// 入力CSVのデータ行を読み込みます。
 		int rowNum = 0;
-		while (fgets(inputLine, MAX_FILE_LINE_LENGTH, inputTableFiles[i])){
+		while (fgets(inputLine, MAX_FILE_LINE_LENGTH, input_table_files[i])){
 			if (MAX_ROW_COUNT <= rowNum){
 				error = ERR_MEMORY_OVER;
 				goto ERROR;
 			}
-			Data **row = inputData[i][rowNum++] = malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 入力されている一行分のデータです。
+			Data **row = input_data[i][rowNum++] = malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 入力されている一行分のデータです。
 			if (!row){
 				error = ERR_MEMORY_ALLOCATE;
 				goto ERROR;
@@ -980,10 +980,10 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		for (int j = 0; j < inputColumnNums[i]; ++j){
 
 			// 全ての行のある列について、データ文字列から符号と数値以外の文字を探します。
-			currentRow = inputData[i];
+			current_row = input_data[i];
 			found = false;
-			while (*currentRow){
-				char *currentChar = (*currentRow)[j]->value.string;
+			while (*current_row){
+				char *currentChar = (*current_row)[j]->value.string;
 				while (*currentChar){
 					bool isNum = false;
 					const char *currentNum = SIGNED_AND_NUMBER;
@@ -1003,15 +1003,15 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				if (found){
 					break;
 				}
-				++currentRow;
+				++current_row;
 			}
 
 			// 符号と数字以外が見つからない列については、数値列に変換します。
 			if (!found){
-				currentRow = inputData[i];
-				while (*currentRow){
-					*(*currentRow)[j] = (Data){ .type = INTEGER, .value = { .integer = atoi((*currentRow)[j]->value.string) } };
-					++currentRow;
+				current_row = input_data[i];
+				while (*current_row){
+					*(*current_row)[j] = (Data){ .type = INTEGER, .value = { .integer = atoi((*current_row)[j]->value.string) } };
+					++current_row;
 				}
 			}
 		}
@@ -1110,7 +1110,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	Data ***currentRows[MAX_TABLE_COUNT] = { NULL }; // 入力された各テーブルの、現在出力している行を指すカーソルです。
 	for (int i = 0; i < tableNamesNum; ++i){
 		// 各テーブルの先頭行を設定します。
-		currentRows[i] = inputData[i];
+		currentRows[i] = input_data[i];
 	}
 
 	// 出力するデータを設定します。
@@ -1119,7 +1119,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			error = ERR_MEMORY_OVER;
 			goto ERROR;
 		}
-		Data **row = outputData[outputRowsNum] = malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 出力している一行分のデータです。
+		Data **row = output_data[outputRowsNum] = malloc(MAX_COLUMN_COUNT * sizeof(Data*)); // 出力している一行分のデータです。
 		if (!row){
 			error = ERR_MEMORY_ALLOCATE;
 			goto ERROR;
@@ -1140,7 +1140,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			*row[i] = *(*currentRows[selectColumnIndexes[i].table])[selectColumnIndexes[i].column];
 		}
 
-		Data **allColumnsRow = allColumnOutputData[outputRowsNum++] = malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)); // WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
+		Data **allColumnsRow = all_column_output_data[outputRowsNum++] = malloc(MAX_TABLE_COUNT * MAX_COLUMN_COUNT * sizeof(Data*)); // WHEREやORDERのためにすべての情報を含む行。rowとインデックスを共有します。
 		if (!allColumnsRow){
 			error = ERR_MEMORY_ALLOCATE;
 			goto ERROR;
@@ -1343,8 +1343,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			if (!whereTopNode->value.value.boolean){
 				free(row);
 				free(allColumnsRow);
-				allColumnOutputData[--outputRowsNum] = NULL;
-				outputData[outputRowsNum] = NULL;
+				all_column_output_data[--outputRowsNum] = NULL;
+				output_data[outputRowsNum] = NULL;
 			}
 			// WHERE条件の計算結果をリセットします。
 			for (int i = 0; i < whereExtensionNodesNum; ++i){
@@ -1360,7 +1360,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 		// 最後のテーブルが最終行になっていた場合は先頭に戻し、順に前のテーブルのカレント行をインクリメントします。
 		for (int i = tableNamesNum - 1; !*currentRows[i] && 0 < i; --i){
 			++currentRows[i - 1];
-			currentRows[i] = inputData[i];
+			currentRows[i] = input_data[i];
 		}
 
 		// 最初のテーブルが最後の行を超えたなら出力行の生成は終わりです。
@@ -1418,8 +1418,8 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			for (int j = i + 1; j < outputRowsNum; ++j){
 				bool jLessThanMin = false; // インデックスがjの値が、minIndexの値より小さいかどうかです。
 				for (int k = 0; k < orderByColumnIndexesNum; ++k){
-					Data *mData = allColumnOutputData[minIndex][orderByColumnIndexes[k]]; // インデックスがminIndexのデータです。
-					Data *jData = allColumnOutputData[j][orderByColumnIndexes[k]]; // インデックスがjのデータです。
+					Data *mData = all_column_output_data[minIndex][orderByColumnIndexes[k]]; // インデックスがminIndexのデータです。
+					Data *jData = all_column_output_data[j][orderByColumnIndexes[k]]; // インデックスがjのデータです。
 					int cmp = 0; // 比較結果です。等しければ0、インデックスjの行が大きければプラス、インデックスminIndexの行が大きければマイナスとなります。
 					switch (mData->type)
 					{
@@ -1447,39 +1447,39 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 					minIndex = j;
 				}
 			}
-			Data** tmp = outputData[minIndex];
-			outputData[minIndex] = outputData[i];
-			outputData[i] = tmp;
+			Data** tmp = output_data[minIndex];
+			output_data[minIndex] = output_data[i];
+			output_data[i] = tmp;
 
-			tmp = allColumnOutputData[minIndex];
-			allColumnOutputData[minIndex] = allColumnOutputData[i];
-			allColumnOutputData[i] = tmp;
+			tmp = all_column_output_data[minIndex];
+			all_column_output_data[minIndex] = all_column_output_data[i];
+			all_column_output_data[i] = tmp;
 		}
 	}
 
 	// 出力ファイルを開きます。
-	outputFile = fopen(outputFileName, "w");
-	if (outputFile == NULL){
+	output_file = fopen(output_file_name, "w");
+	if (output_file == NULL){
 		error = ERR_FILE_OPEN;
 		goto ERROR;
 	}
 
 	// 出力ファイルに列名を出力します。
 	for (int i = 0; i < selectColumnsNum; ++i){
-		result = fputs(outputColumns[i].columnName, outputFile);
+		result = fputs(outputColumns[i].columnName, output_file);
 		if (result == EOF){
 			error = ERR_FILE_WRITE;
 			goto ERROR;
 		}
 		if (i < selectColumnsNum - 1){
-			result = fputs(",", outputFile);
+			result = fputs(",", output_file);
 			if (result == EOF){
 				error = ERR_FILE_WRITE;
 				goto ERROR;
 			}
 		}
 		else{
-			result = fputs("\n", outputFile);
+			result = fputs("\n", output_file);
 			if (result == EOF){
 				error = ERR_FILE_WRITE;
 				goto ERROR;
@@ -1488,9 +1488,9 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	}
 
 	// 出力ファイルにデータを出力します。
-	currentRow = outputData;
-	while (*currentRow){
-		Data **column = *currentRow;
+	current_row = output_data;
+	while (*current_row){
+		Data **column = *current_row;
 		for (int i = 0; i < selectColumnsNum; ++i){
 			char outputString[MAX_DATA_LENGTH] = "";
 			switch ((*column)->type){
@@ -1501,20 +1501,20 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				strcpy(outputString, (*column)->value.string);
 				break;
 			}
-			result = fputs(outputString, outputFile);
+			result = fputs(outputString, output_file);
 			if (result == EOF){
 				error = ERR_FILE_WRITE;
 				goto ERROR;
 			}
 			if (i < selectColumnsNum - 1){
-				result = fputs(",", outputFile);
+				result = fputs(",", output_file);
 				if (result == EOF){
 					error = ERR_FILE_WRITE;
 					goto ERROR;
 				}
 			}
 			else{
-				result = fputs("\n", outputFile);
+				result = fputs("\n", output_file);
 				if (result == EOF){
 					error = ERR_FILE_WRITE;
 					goto ERROR;
@@ -1522,23 +1522,23 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 			}
 			++column;
 		}
-		++currentRow;
+		++current_row;
 	}
 
 	// 正常時の後処理です。
 
 	// ファイルリソースを解放します。
 	for (int i = 0; i < MAX_TABLE_COUNT; ++i){
-		if (inputTableFiles[i]){
-			fclose(inputTableFiles[i]);
+		if (input_table_files[i]){
+			fclose(input_table_files[i]);
 			if (result == EOF){
 				error = ERR_FILE_CLOSE;
 				goto ERROR;
 			}
 		}
 	}
-	if (outputFile){
-		fclose(outputFile);
+	if (output_file){
+		fclose(output_file);
 		if (result == EOF){
 			error = ERR_FILE_CLOSE;
 			goto ERROR;
@@ -1547,33 +1547,33 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 	// メモリリソースを解放します。
 	for (int i = 0; i < tableNamesNum; ++i){
-		currentRow = inputData[i];
-		while (*currentRow){
-			Data **dataCursol = *currentRow;
+		current_row = input_data[i];
+		while (*current_row){
+			Data **dataCursol = *current_row;
 			while (*dataCursol){
 				free(*dataCursol++);
 			}
-			free(*currentRow);
-			currentRow++;
+			free(*current_row);
+			current_row++;
 		}
 	}
-	currentRow = outputData;
-	while (*currentRow){
-		Data **dataCursol = *currentRow;
+	current_row = output_data;
+	while (*current_row){
+		Data **dataCursol = *current_row;
 		while (*dataCursol){
 			free(*dataCursol++);
 		}
-		free(*currentRow);
-		currentRow++;
+		free(*current_row);
+		current_row++;
 	}
-	currentRow = allColumnOutputData;
-	while (*currentRow){
-		Data **dataCursol = *currentRow;
+	current_row = all_column_output_data;
+	while (*current_row){
+		Data **dataCursol = *current_row;
 		while (*dataCursol){
 			free(*dataCursol++);
 		}
-		free(*currentRow);
-		currentRow++;
+		free(*current_row);
+		current_row++;
 	}
 
 	return OK;
@@ -1583,43 +1583,43 @@ ERROR:
 
 	// ファイルリソースを解放します。
 	for (int i = 0; i < MAX_TABLE_COUNT; ++i){
-		if (inputTableFiles[i]){
-			fclose(inputTableFiles[i]);
+		if (input_table_files[i]){
+			fclose(input_table_files[i]);
 		}
 	}
-	if (outputFile){
-		fclose(outputFile);
+	if (output_file){
+		fclose(output_file);
 	}
 
 	// メモリリソースを解放します。
 	for (int i = 0; i < tableNamesNum; ++i){
-		currentRow = inputData[i];
-		while (*currentRow){
-			Data **dataCursol = *currentRow;
+		current_row = input_data[i];
+		while (*current_row){
+			Data **dataCursol = *current_row;
 			while (*dataCursol){
 				free(*dataCursol++);
 			}
-			free(*currentRow);
-			currentRow++;
+			free(*current_row);
+			current_row++;
 		}
 	}
-	currentRow = outputData;
-	while (*currentRow){
-		Data **dataCursol = *currentRow;
+	current_row = output_data;
+	while (*current_row){
+		Data **dataCursol = *current_row;
 		while (*dataCursol){
 			free(*dataCursol++);
 		}
-		free(*currentRow);
-		currentRow++;
+		free(*current_row);
+		current_row++;
 	}
-	currentRow = allColumnOutputData;
-	while (*currentRow){
-		Data **dataCursol = *currentRow;
+	current_row = all_column_output_data;
+	while (*current_row){
+		Data **dataCursol = *current_row;
 		while (*dataCursol){
 			free(*dataCursol++);
 		}
-		free(*currentRow);
-		currentRow++;
+		free(*current_row);
+		current_row++;
 	}
 	return  error;
 }
