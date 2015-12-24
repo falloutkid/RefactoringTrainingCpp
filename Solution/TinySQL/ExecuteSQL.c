@@ -220,9 +220,9 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 	const char *ALPHABET_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
 	const char *ALPHABET_NUMBER_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
-	const char *signNum = "+-0123456789"; // 全ての符号と数字です。
-	const char *num = "0123456789"; // 全ての数字です。
-	const char* space = " \t\r\n"; // 全ての空白文字です。
+	const char *SIGNED_AND_NUMBER = "+-0123456789"; // 全ての符号と数字です。
+	const char *NUMBER = "0123456789"; // 全ての数字です。
+	const char* SPACE = " \t\r\n"; // 全ての空白文字です。
 
 	// inputDataを初期化します。
 	for (size_t i = 0; i < sizeof(inputData) / sizeof(inputData[0]); i++)
@@ -305,7 +305,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 	while (*charactorCursol){
 
 		// 空白を読み飛ばします。
-		for (search = space; *search && *charactorCursol != *search; ++search){}
+		for (search = SPACE; *search && *charactorCursol != *search; ++search){}
 		if (*search){
 			charactorCursol++;
 			continue;
@@ -315,14 +315,14 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 
 		// 先頭文字が数字であるかどうかを確認します。
 		charactorBackPoint = charactorCursol;
-		for (search = num; *search && *charactorCursol != *search; ++search){}
+		for (search = NUMBER; *search && *charactorCursol != *search; ++search){}
 		if (*search){
 			Token literal = (Token){ .kind = INT_LITERAL, .word = "" }; // 読み込んだ数値リテラルの情報です。
 			int wordLength = 0; // 数値リテラルに現在読み込んでいる文字の数です。
 
 			// 数字が続く間、文字を読み込み続けます。
 			do {
-				for (search = num; *search && *charactorCursol != *search; ++search){}
+				for (search = NUMBER; *search && *charactorCursol != *search; ++search){}
 				if (*search){
 					if (MAX_WORD_LENGTH - 1 <= wordLength){
 						error = ERR_MEMORY_OVER;
@@ -986,7 +986,7 @@ int ExecuteSQL(const char* sql, const char* outputFileName)
 				char *currentChar = (*currentRow)[j]->value.string;
 				while (*currentChar){
 					bool isNum = false;
-					const char *currentNum = signNum;
+					const char *currentNum = SIGNED_AND_NUMBER;
 					while (*currentNum){
 						if (*currentChar == *currentNum){
 							isNum = true;
