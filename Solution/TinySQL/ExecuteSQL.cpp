@@ -225,10 +225,10 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 	Data **all_column_output_data[MAX_ROW_COUNT] = { NULL };   // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 
 	// inputDataを初期化します。
-	for (size_t i = 0; i < sizeof(input_data) / sizeof(input_data[0]); i++)
+	for (size_t table_index = 0; table_index < sizeof(input_data) / sizeof(input_data[0]); table_index++)
 	{
-		for (size_t j = 0; j < sizeof(input_data[0]) / sizeof(input_data[0][0]); j++){
-			input_data[i][j] = NULL;
+		for (size_t row_index = 0; row_index < sizeof(input_data[0]) / sizeof(input_data[0][0]); row_index++){
+			input_data[table_index][row_index] = NULL;
 		}
 	}
 
