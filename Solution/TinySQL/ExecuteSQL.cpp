@@ -103,14 +103,15 @@ enum TOKEN_KIND
 };
 
 //! 一つの値を持つデータです。
-typedef struct
+class Data
 {
+public:
 	enum DATA_TYPE type; //!< データの型です。
 
 	char string[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
 	int integer;                  //!< データが整数型の場合の値です。
 	bool boolean;                 //!< データが真偽値型の場合の値です。
-} Data;
+};
 
 //! WHERE句に指定する演算子の情報を表します。
 typedef struct
