@@ -738,8 +738,9 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					}
 				}
 				else if (tokenCursol->kind == INT_LITERAL){
+					int integer_data = atoi(tokenCursol->word);
 					currentNode->value = { INTEGER, { "" } };
-					currentNode->value.value.integer = atoi(tokenCursol->word);
+					currentNode->value.value.integer = integer_data;
 					++tokenCursol;
 				}
 				else if (tokenCursol->kind == STRING_LITERAL){
@@ -1016,8 +1017,9 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 			if (!found){
 				current_row = input_data[i];
 				while (*current_row){
+					int integer_data = atoi((*current_row)[j]->value.string);
 					*(*current_row)[j] = {INTEGER, { ""  } };
-					(*current_row)[j]->value.integer = atoi((*current_row)[j]->value.string);
+					(*current_row)[j]->value.integer = integer_data;
 					++current_row;
 				}
 			}
