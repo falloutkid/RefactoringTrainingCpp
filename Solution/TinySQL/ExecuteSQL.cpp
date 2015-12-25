@@ -8,7 +8,6 @@
 #include <iostream>
 #include <algorithm>
 
-
 #pragma warning(disable:4996)
 
 namespace {
@@ -104,6 +103,7 @@ enum TOKEN_KIND
 };
 
 //! 一つの値を持つデータです。
+/*
 typedef struct
 {
 	enum DATA_TYPE type; //!< データの型です。
@@ -115,6 +115,17 @@ typedef struct
 		int integer;                  //!< データが整数型の場合の値です。
 		bool boolean;                 //!< データが真偽値型の場合の値です。
 	} value;
+} Data;
+*/
+typedef struct
+{
+	enum DATA_TYPE type; //!< データの型です。
+
+						 //! 実際のデータを格納する共用体です。
+
+	char string[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
+	int integer;                  //!< データが整数型の場合の値です。
+	bool boolean;                 //!< データが真偽値型の場合の値です。
 } Data;
 
 //! WHERE句に指定する演算子の情報を表します。
@@ -755,16 +766,16 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 				else if (tokenCursol->kind == INT_LITERAL){
 					int integer_data = atoi(tokenCursol->word);
 					currentNode->value = { INTEGER, { "" } };
-					currentNode->value.value.integer = integer_data;
+					currentNode->value.integer = integer_data;
 					++tokenCursol;
 				}
 				else if (tokenCursol->kind == STRING_LITERAL){
 					currentNode->value = { STRING,{ "" } };
 
 					// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
-					strncpy(currentNode->value.value.string, tokenCursol->word + 1, std::min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
-					currentNode->value.value.string[MAX_DATA_LENGTH - 1] = '\0';
-					currentNode->value.value.string[strlen(currentNode->value.value.string) - 1] = '\0';
+					strncpy(currentNode->value.string, tokenCursol->word + 1, std::min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
+					currentNode->value.string[MAX_DATA_LENGTH - 1] = '\0';
+					currentNode->value.string[strlen(currentNode->value.string) - 1] = '\0';
 					++tokenCursol;
 				}
 				else{
@@ -984,7 +995,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					goto ERROR;
 				}
 				*row[columnNum] = { STRING, { "" } };
-				char *writeCursol = row[columnNum++]->value.string; // データ文字列の書き込みに利用するカーソルです。
+				char *writeCursol = row[columnNum++]->string; // データ文字列の書き込みに利用するカーソルです。
 
 				// データ文字列を一つ読みます。
 				while (*charactorCursol && *charactorCursol != ',' && *charactorCursol != '\r'&& *charactorCursol != '\n'){
@@ -1005,7 +1016,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 			current_row = input_data[i];
 			found = false;
 			while (*current_row){
-				char *currentChar = (*current_row)[j]->value.string;
+				char *currentChar = (*current_row)[j]->string;
 				while (*currentChar){
 					bool isNum = false;
 					const char *currentNum = SIGNED_AND_NUMBER;
@@ -1032,9 +1043,9 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 			if (!found){
 				current_row = input_data[i];
 				while (*current_row){
-					int integer_data = atoi((*current_row)[j]->value.string);
+					int integer_data = atoi((*current_row)[j]->string);
 					*(*current_row)[j] = {INTEGER, { ""  } };
-					(*current_row)[j]->value.integer = integer_data;
+					(*current_row)[j]->integer = integer_data;
 					++current_row;
 				}
 			}
@@ -1124,7 +1135,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 			if (whereExtensionNodes[i].middle_operator.kind == NOT_TOKEN &&
 				!*whereExtensionNodes[i].column.columnName &&
 				whereExtensionNodes[i].value.type == INTEGER){
-				whereExtensionNodes[i].value.value.integer *= whereExtensionNodes[i].signCoefficient;
+				whereExtensionNodes[i].value.integer *= whereExtensionNodes[i].signCoefficient;
 			}
 		}
 	}
@@ -1239,7 +1250,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 						;
 						// 符号を考慮して値を計算します。
 						if (currentNode->value.type == INTEGER){
-							currentNode->value.value.integer *= currentNode->signCoefficient;
+							currentNode->value.integer *= currentNode->signCoefficient;
 						}
 					}
 					break;
@@ -1264,44 +1275,44 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					case INTEGER:
 						switch (currentNode->middle_operator.kind){
 						case EQUAL:
-							currentNode->value.value.boolean = currentNode->left->value.value.integer == currentNode->right->value.value.integer;
+							currentNode->value.boolean = currentNode->left->value.integer == currentNode->right->value.integer;
 							break;
 						case GREATER_THAN:
-							currentNode->value.value.boolean = currentNode->left->value.value.integer > currentNode->right->value.value.integer;
+							currentNode->value.boolean = currentNode->left->value.integer > currentNode->right->value.integer;
 							break;
 						case GREATER_THAN_OR_EQUAL:
-							currentNode->value.value.boolean = currentNode->left->value.value.integer >= currentNode->right->value.value.integer;
+							currentNode->value.boolean = currentNode->left->value.integer >= currentNode->right->value.integer;
 							break;
 						case LESS_THAN:
-							currentNode->value.value.boolean = currentNode->left->value.value.integer < currentNode->right->value.value.integer;
+							currentNode->value.boolean = currentNode->left->value.integer < currentNode->right->value.integer;
 							break;
 						case LESS_THAN_OR_EQUAL:
-							currentNode->value.value.boolean = currentNode->left->value.value.integer <= currentNode->right->value.value.integer;
+							currentNode->value.boolean = currentNode->left->value.integer <= currentNode->right->value.integer;
 							break;
 						case NOT_EQUAL:
-							currentNode->value.value.boolean = currentNode->left->value.value.integer != currentNode->right->value.value.integer;
+							currentNode->value.boolean = currentNode->left->value.integer != currentNode->right->value.integer;
 							break;
 						}
 						break;
 					case STRING:
 						switch (currentNode->middle_operator.kind){
 						case EQUAL:
-							currentNode->value.value.boolean = strcmp(currentNode->left->value.value.string, currentNode->right->value.value.string) == 0;
+							currentNode->value.boolean = strcmp(currentNode->left->value.string, currentNode->right->value.string) == 0;
 							break;
 						case GREATER_THAN:
-							currentNode->value.value.boolean = strcmp(currentNode->left->value.value.string, currentNode->right->value.value.string) > 0;
+							currentNode->value.boolean = strcmp(currentNode->left->value.string, currentNode->right->value.string) > 0;
 							break;
 						case GREATER_THAN_OR_EQUAL:
-							currentNode->value.value.boolean = strcmp(currentNode->left->value.value.string, currentNode->right->value.value.string) >= 0;
+							currentNode->value.boolean = strcmp(currentNode->left->value.string, currentNode->right->value.string) >= 0;
 							break;
 						case LESS_THAN:
-							currentNode->value.value.boolean = strcmp(currentNode->left->value.value.string, currentNode->right->value.value.string) < 0;
+							currentNode->value.boolean = strcmp(currentNode->left->value.string, currentNode->right->value.string) < 0;
 							break;
 						case LESS_THAN_OR_EQUAL:
-							currentNode->value.value.boolean = strcmp(currentNode->left->value.value.string, currentNode->right->value.value.string) <= 0;
+							currentNode->value.boolean = strcmp(currentNode->left->value.string, currentNode->right->value.string) <= 0;
 							break;
 						case NOT_EQUAL:
-							currentNode->value.value.boolean = strcmp(currentNode->left->value.value.string, currentNode->right->value.value.string) != 0;
+							currentNode->value.boolean = strcmp(currentNode->left->value.string, currentNode->right->value.string) != 0;
 							break;
 						}
 						break;
@@ -1323,16 +1334,16 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					// 比較結果を演算子によって計算方法を変えて、計算します。
 					switch (currentNode->middle_operator.kind){
 					case PLUS:
-						currentNode->value.value.integer = currentNode->left->value.value.integer + currentNode->right->value.value.integer;
+						currentNode->value.integer = currentNode->left->value.integer + currentNode->right->value.integer;
 						break;
 					case MINUS:
-						currentNode->value.value.integer = currentNode->left->value.value.integer - currentNode->right->value.value.integer;
+						currentNode->value.integer = currentNode->left->value.integer - currentNode->right->value.integer;
 						break;
 					case ASTERISK:
-						currentNode->value.value.integer = currentNode->left->value.value.integer * currentNode->right->value.value.integer;
+						currentNode->value.integer = currentNode->left->value.integer * currentNode->right->value.integer;
 						break;
 					case SLASH:
-						currentNode->value.value.integer = currentNode->left->value.value.integer / currentNode->right->value.value.integer;
+						currentNode->value.integer = currentNode->left->value.integer / currentNode->right->value.integer;
 						break;
 					}
 					break;
@@ -1350,10 +1361,10 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					// 比較結果を演算子によって計算方法を変えて、計算します。
 					switch (currentNode->middle_operator.kind){
 					case AND:
-						currentNode->value.value.boolean = currentNode->left->value.value.boolean && currentNode->right->value.value.boolean;
+						currentNode->value.boolean = currentNode->left->value.boolean && currentNode->right->value.boolean;
 						break;
 					case OR:
-						currentNode->value.value.boolean = currentNode->left->value.value.boolean || currentNode->right->value.value.boolean;
+						currentNode->value.boolean = currentNode->left->value.boolean || currentNode->right->value.boolean;
 						break;
 					}
 				}
@@ -1364,7 +1375,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 			}
 
 			// 条件に合わない行は出力から削除します。
-			if (!whereTopNode->value.value.boolean){
+			if (!whereTopNode->value.boolean){
 				free(row);
 				free(allColumnsRow);
 				all_column_output_data[--outputRowsNum] = NULL;
@@ -1448,10 +1459,10 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					switch (mData->type)
 					{
 					case INTEGER:
-						cmp = jData->value.integer - mData->value.integer;
+						cmp = jData->integer - mData->integer;
 						break;
 					case STRING:
-						cmp = strcmp(jData->value.string, mData->value.string);
+						cmp = strcmp(jData->string, mData->string);
 						break;
 					}
 
@@ -1519,10 +1530,10 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 			char outputString[MAX_DATA_LENGTH] = "";
 			switch ((*column)->type){
 			case INTEGER:
-				itoa((*column)->value.integer, outputString, 10);
+				itoa((*column)->integer, outputString, 10);
 				break;
 			case STRING:
-				strcpy(outputString, (*column)->value.string);
+				strcpy(outputString, (*column)->string);
 				break;
 			}
 			result = fputs(outputString, output_file);
