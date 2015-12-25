@@ -11,20 +11,33 @@
 
 #pragma warning(disable:4996)
 
-#define MAX_FILE_LINE_LENGTH 4096          //!< 読み込むファイルの一行の最大長です。
-#define MAX_WORD_LENGTH 256                //!< SQLの一語の最大長です。
-#define MAX_DATA_LENGTH 256                //!< 入出力されるデータの、各列の最大長です。
-#define MAX_TOKEN_COUNT 255                //!< SQLに含まれるトークンの最大値です。
-#define MAX_COLUMN_COUNT 16                //!< 入出力されるデータに含まれる列の最大数です。
-#define MAX_ROW_COUNT 256                  //!< 入出力されるデータに含まれる行の最大数です。
-#define MAX_TABLE_COUNT 8                  //!< CSVとして入力されるテーブルの最大数です。
-#define MAX_EXTENSION_TREE_NODE_COUNT 256  //!< WHERE句に指定される式木のノードの最大数です。
 namespace {
-	const char *ALPHABET_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
-	const char *ALPHABET_NUMBER_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
-	const char *SIGNED_AND_NUMBER = "+-0123456789"; // 全ての符号と数字です。
-	const char *NUMBER = "0123456789"; // 全ての数字です。
-	const char* SPACE = " \t\r\n"; // 全ての空白文字です。
+	//!< 入出力されるデータに含まれる列の最大数です。
+	const int MAX_COLUMN_COUNT = 10;
+	//!< 入出力されるデータに含まれる行の最大数です。
+	const int MAX_ROW_COUNT = 256;
+	//!< CSVとして入力されるテーブルの最大数です。
+	const int MAX_TABLE_COUNT = 8;
+	//!< WHERE句に指定される式木のノードの最大数です。
+	const int MAX_EXTENSION_TREE_NODE_COUNT = 256;
+	//!< SQLに含まれるトークンの最大値です。
+	const int MAX_TOKEN_COUNT = 255;
+	//!< 入出力されるデータの、各列の最大長です。
+	const int MAX_DATA_LENGTH = 256;
+	//!< SQLの一語の最大長です。
+	const int MAX_WORD_LENGTH = 256;
+	//!< 読み込むファイルの一行の最大長です。
+	const int MAX_FILE_LINE_LENGTH = 4096;
+	// 全てのアルファベットの大文字小文字とアンダーバーです。
+	const char *ALPHABET_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	// 全ての数字とアルファベットの大文字小文字とアンダーバーです。
+	const char *ALPHABET_NUMBER_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	// 全ての符号と数字です。
+	const char *SIGNED_AND_NUMBER = "+-0123456789";
+	// 全ての数字です
+	const char *NUMBER = "0123456789";
+	// 全ての空白文字です。
+	const char* SPACE = " \t\r\n";
 }
 
 
