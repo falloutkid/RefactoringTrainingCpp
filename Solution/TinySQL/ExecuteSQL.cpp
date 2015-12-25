@@ -103,20 +103,6 @@ enum TOKEN_KIND
 };
 
 //! 一つの値を持つデータです。
-/*
-typedef struct
-{
-	enum DATA_TYPE type; //!< データの型です。
-
-	//! 実際のデータを格納する共用体です。
-	union
-	{
-		char string[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
-		int integer;                  //!< データが整数型の場合の値です。
-		bool boolean;                 //!< データが真偽値型の場合の値です。
-	} value;
-} Data;
-*/
 typedef struct
 {
 	enum DATA_TYPE type; //!< データの型です。
@@ -172,6 +158,58 @@ typedef struct
 } ColumnIndex;
 
 // 以上ヘッダに相当する部分。
+
+namespace {
+	// 演算子の情報です。
+	const Operator OPERATOR_LIST[] =
+	{
+		{ ASTERISK, 1 },
+		{ SLASH, 1 },
+		{ PLUS, 2 },
+		{ MINUS, 2 },
+		{ EQUAL, 3 },
+		{ GREATER_THAN, 3 },
+		{ GREATER_THAN_OR_EQUAL, 3 },
+		{ LESS_THAN, 3 },
+		{ LESS_THAN_OR_EQUAL, 3 },
+		{ NOT_EQUAL, 3 },
+		{ AND, 4 },
+		{ OR, 5 },
+	};
+
+	// キーワードをトークンとして認識するためのキーワード一覧情報です。
+	const Token KEYWORD_CONDITIONS[] =
+	{
+		{ AND, "AND" },
+		{ ASC, "ASC" },
+		{ BY, "BY" },
+		{ DESC, "DESC" },
+		{ FROM, "FROM" },
+		{ ORDER, "ORDER" },
+		{ OR, "OR" },
+		{ SELECT, "SELECT" },
+		{ WHERE, "WHERE" }
+	};
+
+	// 記号をトークンとして認識するための記号一覧情報です。
+	const Token SIGN_CONDITIONS[] =
+	{
+		{ GREATER_THAN_OR_EQUAL, ">=" },
+		{ LESS_THAN_OR_EQUAL, "<=" },
+		{ NOT_EQUAL, "<>" },
+		{ ASTERISK, "*" },
+		{ COMMA, "," },
+		{ CLOSE_PAREN, ")" },
+		{ DOT, "." },
+		{ EQUAL, "=" },
+		{ GREATER_THAN, ">" },
+		{ LESS_THAN, "<" },
+		{ MINUS, "-" },
+		{ OPEN_PAREN, "(" },
+		{ PLUS, "+" },
+		{ SLASH, "/" },
+	};
+}
 
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
 //! @param [in] sql 実行するSQLです。
@@ -267,58 +305,8 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 
 	// keywordConditionsとsignConditionsは先頭から順に検索されるので、前方一致となる二つの項目は順番に気をつけて登録しなくてはいけません。
 
-	// キーワードをトークンとして認識するためのキーワード一覧情報です。
-	const Token keywordConditions[] =
-	{
-		{ AND, "AND" },
-		{ ASC, "ASC" },
-		{ BY, "BY" },
-		{ DESC, "DESC" },
-		{ FROM, "FROM" },
-		{ ORDER, "ORDER" },
-		{ OR, "OR" },
-		{ SELECT, "SELECT" },
-		{ WHERE, "WHERE" }
-	};
-
-	// 記号をトークンとして認識するための記号一覧情報です。
-	const Token signConditions[] =
-	{
-		{ GREATER_THAN_OR_EQUAL, ">=" },
-		{ LESS_THAN_OR_EQUAL, "<=" },
-		{ NOT_EQUAL, "<>" },
-		{ ASTERISK, "*" },
-		{ COMMA, "," },
-		{ CLOSE_PAREN, ")" },
-		{ DOT, "." },
-		{ EQUAL, "=" },
-		{ GREATER_THAN, ">" },
-		{ LESS_THAN, "<" },
-		{ MINUS, "-" },
-		{ OPEN_PAREN, "(" },
-		{ PLUS, "+" },
-		{ SLASH, "/" },
-	};
-
 	Token tokens[MAX_TOKEN_COUNT]; // SQLを分割したトークンです。
 	int tokensNum = 0; // tokensの有効な数です。
-
-	// 演算子の情報です。
-	const Operator operators[] =
-	{
-		{ ASTERISK, 1 },
-		{ SLASH, 1 },
-		{ PLUS, 2 },
-		{ MINUS, 2 },
-		{ EQUAL, 3 },
-		{ GREATER_THAN, 3 },
-		{ GREATER_THAN_OR_EQUAL, 3 },
-		{ LESS_THAN, 3 },
-		{ LESS_THAN_OR_EQUAL, 3 },
-		{ NOT_EQUAL, 3 },
-		{ AND, 4 },
-		{ OR, 5 },
-	};
 
 	const char* charactorBackPoint = NULL; // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
 
@@ -422,9 +410,9 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 
 		// キーワードを読み込みます。
 		found = false;
-		for (size_t i = 0; i < sizeof(keywordConditions) / sizeof(keywordConditions[0]); ++i){
+		for (size_t i = 0; i < sizeof(KEYWORD_CONDITIONS) / sizeof(KEYWORD_CONDITIONS[0]); ++i){
 			charactorBackPoint = charactorCursol;
-			Token condition = keywordConditions[i]; // 確認するキーワードの条件です。
+			Token condition = KEYWORD_CONDITIONS[i]; // 確認するキーワードの条件です。
 			char *wordCursol = condition.word; // 確認するキーワードの文字列のうち、現在確認している一文字を指します。
 
 			// キーワードが指定した文字列となっているか確認します。
@@ -455,9 +443,9 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 
 		// 記号を読み込みます。
 		found = false;
-		for (size_t i = 0; i < sizeof(signConditions) / sizeof(Token); ++i){
+		for (size_t i = 0; i < sizeof(SIGN_CONDITIONS) / sizeof(Token); ++i){
 			charactorBackPoint = charactorCursol;
-			Token condition = signConditions[i]; // 確認する記号の条件です。
+			Token condition = SIGN_CONDITIONS[i]; // 確認する記号の条件です。
 			char *wordCursol = condition.word; // 確認する記号の文字列のうち、現在確認している一文字を指します。
 
 			// 記号が指定した文字列となっているか確認します。
@@ -812,9 +800,9 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 
 				// 現在見ている演算子の情報を探します。
 				found = false;
-				for (int j = 0; j < sizeof(operators) / sizeof(operators[0]); ++j){
-					if (operators[j].kind == tokenCursol->kind){
-						temporary_operator = operators[j];
+				for (int j = 0; j < sizeof(OPERATOR_LIST) / sizeof(OPERATOR_LIST[0]); ++j){
+					if (OPERATOR_LIST[j].kind == tokenCursol->kind){
+						temporary_operator = OPERATOR_LIST[j];
 						found = true;
 						break;
 					}
