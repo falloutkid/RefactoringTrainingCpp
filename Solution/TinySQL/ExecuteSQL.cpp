@@ -107,8 +107,6 @@ typedef struct
 {
 	enum DATA_TYPE type; //!< データの型です。
 
-						 //! 実際のデータを格納する共用体です。
-
 	char string[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
 	int integer;                  //!< データが整数型の場合の値です。
 	bool boolean;                 //!< データが真偽値型の場合の値です。
@@ -138,10 +136,10 @@ typedef struct
 //! WHERE句の条件の式木を表します。
 typedef struct _extension_tree_node
 {
-	struct _extension_tree_node *parent; //!< 親となるノードです。根の式木の場合はNULLとなります。
-	struct _extension_tree_node *left;   //!< 左の子となるノードです。自身が末端の葉となる式木の場合はNULLとなります。
+	struct _extension_tree_node *parent; //!< 親となるノードです。根の式木の場合はnullptrとなります。
+	struct _extension_tree_node *left;   //!< 左の子となるノードです。自身が末端の葉となる式木の場合はnullptrとなります。
 	Operator middle_operator;                   //!< 中置される演算子です。自身が末端のとなる式木の場合の種類はNOT_TOKENとなります。
-	struct _extension_tree_node *right;  //!< 右の子となるノードです。自身が末端の葉となる式木の場合はNULLとなります。
+	struct _extension_tree_node *right;  //!< 右の子となるノードです。自身が末端の葉となる式木の場合はnullptrとなります。
 	bool inParen;                        //!< 自身がかっこにくるまれているかどうかです。
 	int parenOpenBeforeClose;            //!< 木の構築中に0以外となり、自身の左にあり、まだ閉じてないカッコの開始の数となります。
 	int signCoefficient;                 //!< 自身が葉にあり、マイナス単項演算子がついている場合は-1、それ以外は1となります。
@@ -283,21 +281,21 @@ namespace {
 int ExecuteSQL(const char* sql, const char* output_file_name)
 {
 	enum RESULT_VALUE error = OK;                           // 発生したエラーの種類です。
-	FILE *input_table_files[MAX_TABLE_COUNT] = { NULL };      // 読み込む入力ファイルの全てのファイルポインタです。
-	FILE *output_file = NULL;                                // 書き込むファイルのファイルポインタです。
+	FILE *input_table_files[MAX_TABLE_COUNT] = { nullptr };      // 読み込む入力ファイルの全てのファイルポインタです。
+	FILE *output_file = nullptr;                                // 書き込むファイルのファイルポインタです。
 	int result = 0;                                         // 関数の戻り値を一時的に保存します。
 	bool found = false;                                     // 検索時に見つかったかどうかの結果を一時的に保存します。
-	const char *search = NULL;                              // 文字列検索に利用するポインタです。
-	Data ***current_row = NULL;                              // データ検索時に現在見ている行を表します。
+	const char *search = nullptr;                              // 文字列検索に利用するポインタです。
+	Data ***current_row = nullptr;                              // データ検索時に現在見ている行を表します。
 	Data **input_data[MAX_TABLE_COUNT][MAX_ROW_COUNT];       // 入力データです。
-	Data **output_data[MAX_ROW_COUNT] = { NULL };            // 出力データです。
-	Data **all_column_output_data[MAX_ROW_COUNT] = { NULL };   // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
+	Data **output_data[MAX_ROW_COUNT] = { nullptr };            // 出力データです。
+	Data **all_column_output_data[MAX_ROW_COUNT] = { nullptr };   // 出力するデータに対応するインデックスを持ち、すべての入力データを保管します。
 
 	// inputDataを初期化します。
 	for (size_t table_index = 0; table_index < sizeof(input_data) / sizeof(input_data[0]); table_index++)
 	{
 		for (size_t row_index = 0; row_index < sizeof(input_data[0]) / sizeof(input_data[0][0]); row_index++){
-			input_data[table_index][row_index] = NULL;
+			input_data[table_index][row_index] = nullptr;
 		}
 	}
 
@@ -308,7 +306,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 	Token tokens[MAX_TOKEN_COUNT]; // SQLを分割したトークンです。
 	int tokensNum = 0; // tokensの有効な数です。
 
-	const char* charactorBackPoint = NULL; // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
+	const char* charactorBackPoint = nullptr; // SQLをトークンに分割して読み込む時に戻るポイントを記録しておきます。
 
 	const char* charactorCursol = sql; // SQLをトークンに分割して読み込む時に現在読んでいる文字の場所を表します。
 
@@ -536,10 +534,10 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 	for (size_t i = 0; i < sizeof(whereExtensionNodes) / sizeof(whereExtensionNodes[0]); i++)
 	{
 		whereExtensionNodes[i] = {
-			NULL,
-			NULL,
+			nullptr,
+			nullptr,
 			{ NOT_TOKEN, 0 },
-			NULL,
+			nullptr,
 			false,
 			0,
 			1,
@@ -550,7 +548,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 	}
 	int whereExtensionNodesNum = 0; // 現在読み込まれているのwhereExtensionNodesの数です。
 
-	ExtensionTreeNode *whereTopNode = NULL; // 式木の根となるノードです。
+	ExtensionTreeNode *whereTopNode = nullptr; // 式木の根となるノードです。
 
 	// SQLの構文を解析し、必要な情報を取得します。
 
@@ -689,7 +687,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 		if (tokenCursol->kind == WHERE){
 			readWhere = true;
 			++tokenCursol;
-			ExtensionTreeNode *currentNode = NULL; // 現在読み込んでいるノードです。
+			ExtensionTreeNode *currentNode = nullptr; // 現在読み込んでいるノードです。
 			while (true){
 				// オペランドを読み込みます。
 
@@ -963,7 +961,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 			}
 			// 生成した行を初期化します。
 			for (int j = 0; j < MAX_COLUMN_COUNT; ++j){
-				row[j] = NULL;
+				row[j] = nullptr;
 			}
 
 			charactorCursol = inputLine;
@@ -1130,7 +1128,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 
 	int outputRowsNum = 0; // 出力データの現在の行数です。
 
-	Data ***currentRows[MAX_TABLE_COUNT] = { NULL }; // 入力された各テーブルの、現在出力している行を指すカーソルです。
+	Data ***currentRows[MAX_TABLE_COUNT] = { nullptr }; // 入力された各テーブルの、現在出力している行を指すカーソルです。
 	for (int i = 0; i < tableNamesNum; ++i){
 		// 各テーブルの先頭行を設定します。
 		currentRows[i] = input_data[i];
@@ -1150,7 +1148,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 
 		// 生成した行を初期化します。
 		for (int i = 0; i < MAX_COLUMN_COUNT; ++i){
-			row[i] = NULL;
+			row[i] = nullptr;
 		}
 
 		// 行の各列のデータを入力から持ってきて設定します。
@@ -1170,7 +1168,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 		}
 		// 生成した行を初期化します。
 		for (int i = 0; i < MAX_TABLE_COUNT * MAX_COLUMN_COUNT; ++i){
-			allColumnsRow[i] = NULL;
+			allColumnsRow[i] = nullptr;
 		}
 
 		// allColumnsRowの列を設定します。
@@ -1366,8 +1364,8 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 			if (!whereTopNode->value.boolean){
 				free(row);
 				free(allColumnsRow);
-				all_column_output_data[--outputRowsNum] = NULL;
-				output_data[outputRowsNum] = NULL;
+				all_column_output_data[--outputRowsNum] = nullptr;
+				output_data[outputRowsNum] = nullptr;
 			}
 			// WHERE条件の計算結果をリセットします。
 			for (int i = 0; i < whereExtensionNodesNum; ++i){
@@ -1482,7 +1480,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 
 	// 出力ファイルを開きます。
 	output_file = fopen(output_file_name, "w");
-	if (output_file == NULL){
+	if (output_file == nullptr){
 		error = ERR_FILE_OPEN;
 		goto ERROR;
 	}
