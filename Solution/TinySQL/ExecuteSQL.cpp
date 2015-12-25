@@ -19,11 +19,13 @@
 #define MAX_ROW_COUNT 256                  //!< 入出力されるデータに含まれる行の最大数です。
 #define MAX_TABLE_COUNT 8                  //!< CSVとして入力されるテーブルの最大数です。
 #define MAX_EXTENSION_TREE_NODE_COUNT 256  //!< WHERE句に指定される式木のノードの最大数です。
-const char *ALPHABET_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
-const char *ALPHABET_NUMBER_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
-const char *SIGNED_AND_NUMBER = "+-0123456789"; // 全ての符号と数字です。
-const char *NUMBER = "0123456789"; // 全ての数字です。
-const char* SPACE = " \t\r\n"; // 全ての空白文字です。
+namespace {
+	const char *ALPHABET_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ"; // 全てのアルファベットの大文字小文字とアンダーバーです。
+	const char *ALPHABET_NUMBER_AND_UNDERBAR = "_abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 全ての数字とアルファベットの大文字小文字とアンダーバーです。
+	const char *SIGNED_AND_NUMBER = "+-0123456789"; // 全ての符号と数字です。
+	const char *NUMBER = "0123456789"; // 全ての数字です。
+	const char* SPACE = " \t\r\n"; // 全ての空白文字です。
+}
 
 
 //! カレントディレクトリにあるCSVに対し、簡易的なSQLを実行し、結果をファイルに出力します。
