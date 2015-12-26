@@ -114,47 +114,52 @@ public:
 };
 
 //! WHERE句に指定する演算子の情報を表します。
-typedef struct
+class Operator
 {
+public:
 	enum TOKEN_KIND kind; //!< 演算子の種類を、演算子を記述するトークンの種類で表します。
 	int order; //!< 演算子の優先順位です。
-} Operator;
+};
 
 //! トークンを表します。
-typedef struct
+class Token
 {
+public:
 	enum TOKEN_KIND kind; //!< トークンの種類です。
 	char word[MAX_WORD_LENGTH]; //!< 記録されているトークンの文字列です。記録の必要がなければ空白です。
-} Token;
+};
 
 //! 指定された列の情報です。どのテーブルに所属するかの情報も含みます。 
-typedef struct
+class Column
 {
+public:
 	char tableName[MAX_WORD_LENGTH]; //!< 列が所属するテーブル名です。指定されていない場合は空文字列となります。
 	char columnName[MAX_WORD_LENGTH]; //!< 指定された列の列名です。
-} Column;
+};
 
 //! WHERE句の条件の式木を表します。
-typedef struct _extension_tree_node
+class ExtensionTreeNode
 {
-	struct _extension_tree_node *parent; //!< 親となるノードです。根の式木の場合はnullptrとなります。
-	struct _extension_tree_node *left;   //!< 左の子となるノードです。自身が末端の葉となる式木の場合はnullptrとなります。
+public:
+	ExtensionTreeNode *parent; //!< 親となるノードです。根の式木の場合はnullptrとなります。
+	ExtensionTreeNode *left;   //!< 左の子となるノードです。自身が末端の葉となる式木の場合はnullptrとなります。
 	Operator middle_operator;                   //!< 中置される演算子です。自身が末端のとなる式木の場合の種類はNOT_TOKENとなります。
-	struct _extension_tree_node *right;  //!< 右の子となるノードです。自身が末端の葉となる式木の場合はnullptrとなります。
+	ExtensionTreeNode *right;  //!< 右の子となるノードです。自身が末端の葉となる式木の場合はnullptrとなります。
 	bool inParen;                        //!< 自身がかっこにくるまれているかどうかです。
 	int parenOpenBeforeClose;            //!< 木の構築中に0以外となり、自身の左にあり、まだ閉じてないカッコの開始の数となります。
 	int signCoefficient;                 //!< 自身が葉にあり、マイナス単項演算子がついている場合は-1、それ以外は1となります。
 	Column column;                       //!< 列場指定されている場合に、その列を表します。列指定ではない場合はcolumnNameが空文字列となります。
 	bool calculated;                     //!< 式の値を計算中に、計算済みかどうかです。
 	Data value;                          //!< 指定された、もしくは計算された値です。
-} ExtensionTreeNode;
+};
 
 //! 行の情報を入力のテーブルインデックス、列インデックスの形で持ちます。
-typedef struct
+class ColumnIndex
 {
+public:
 	int table;  //!< 列が入力の何テーブル目の列かです。
 	int column; //!< 列が入力のテーブルの何列目かです。
-} ColumnIndex;
+} ;
 
 // 以上ヘッダに相当する部分。
 
