@@ -6,6 +6,7 @@
 #include "ctype.h"
 
 #include <iostream>
+#include <string>
 #include <algorithm>
 
 #pragma warning(disable:4996)
@@ -107,8 +108,8 @@ class Data
 {
 public:
 	enum DATA_TYPE type; //!< データの型です。
-
-	char string[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
+	
+	char string_data[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
 	int integer;                  //!< データが整数型の場合の値です。
 	bool boolean;                 //!< データが真偽値型の場合の値です。
 };
@@ -133,8 +134,8 @@ public:
 class Column
 {
 public:
-	char tableName[MAX_WORD_LENGTH]; //!< 列が所属するテーブル名です。指定されていない場合は空文字列となります。
-	char columnName[MAX_WORD_LENGTH]; //!< 指定された列の列名です。
+	char table_name[MAX_WORD_LENGTH]; //!< 列が所属するテーブル名です。指定されていない場合は空文字列となります。
+	char column_name[MAX_WORD_LENGTH]; //!< 指定された列の列名です。
 };
 
 //! WHERE句の条件の式木を表します。
@@ -583,16 +584,16 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					goto ERROR;
 				}
 				// テーブル名が指定されていない場合と仮定して読み込みます。
-				strncpy(selectColumns[selectColumnsNum].tableName, "", MAX_WORD_LENGTH);
-				strncpy(selectColumns[selectColumnsNum].columnName, tokenCursol->word, MAX_WORD_LENGTH);
+				strncpy(selectColumns[selectColumnsNum].table_name, "", MAX_WORD_LENGTH);
+				strncpy(selectColumns[selectColumnsNum].column_name, tokenCursol->word, MAX_WORD_LENGTH);
 				++tokenCursol;
 				if (tokenCursol->kind == DOT){
 					++tokenCursol;
 					if (tokenCursol->kind == IDENTIFIER){
 
 						// テーブル名が指定されていることがわかったので読み替えます。
-						strncpy(selectColumns[selectColumnsNum].tableName, selectColumns[selectColumnsNum].columnName, MAX_WORD_LENGTH);
-						strncpy(selectColumns[selectColumnsNum].columnName, tokenCursol->word, MAX_WORD_LENGTH);
+						strncpy(selectColumns[selectColumnsNum].table_name, selectColumns[selectColumnsNum].column_name, MAX_WORD_LENGTH);
+						strncpy(selectColumns[selectColumnsNum].column_name, tokenCursol->word, MAX_WORD_LENGTH);
 						++tokenCursol;
 					}
 					else{
@@ -643,16 +644,16 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 							goto ERROR;
 						}
 						// テーブル名が指定されていない場合と仮定して読み込みます。
-						strncpy(orderByColumns[orderByColumnsNum].tableName, "", MAX_WORD_LENGTH);
-						strncpy(orderByColumns[orderByColumnsNum].columnName, tokenCursol->word, MAX_WORD_LENGTH);
+						strncpy(orderByColumns[orderByColumnsNum].table_name, "", MAX_WORD_LENGTH);
+						strncpy(orderByColumns[orderByColumnsNum].column_name, tokenCursol->word, MAX_WORD_LENGTH);
 						++tokenCursol;
 						if (tokenCursol->kind == DOT){
 							++tokenCursol;
 							if (tokenCursol->kind == IDENTIFIER){
 
 								// テーブル名が指定されていることがわかったので読み替えます。
-								strncpy(orderByColumns[orderByColumnsNum].tableName, orderByColumns[orderByColumnsNum].columnName, MAX_WORD_LENGTH);
-								strncpy(orderByColumns[orderByColumnsNum].columnName, tokenCursol->word, MAX_WORD_LENGTH);
+								strncpy(orderByColumns[orderByColumnsNum].table_name, orderByColumns[orderByColumnsNum].column_name, MAX_WORD_LENGTH);
+								strncpy(orderByColumns[orderByColumnsNum].column_name, tokenCursol->word, MAX_WORD_LENGTH);
 								++tokenCursol;
 							}
 							else{
@@ -737,16 +738,16 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 				if (tokenCursol->kind == IDENTIFIER){
 
 					// テーブル名が指定されていない場合と仮定して読み込みます。
-					strncpy(currentNode->column.tableName, "", MAX_WORD_LENGTH);
-					strncpy(currentNode->column.columnName, tokenCursol->word, MAX_WORD_LENGTH);
+					strncpy(currentNode->column.table_name, "", MAX_WORD_LENGTH);
+					strncpy(currentNode->column.column_name, tokenCursol->word, MAX_WORD_LENGTH);
 					++tokenCursol;
 					if (tokenCursol->kind == DOT){
 						++tokenCursol;
 						if (tokenCursol->kind == IDENTIFIER){
 
 							// テーブル名が指定されていることがわかったので読み替えます。
-							strncpy(currentNode->column.tableName, currentNode->column.columnName, MAX_WORD_LENGTH);
-							strncpy(currentNode->column.columnName, tokenCursol->word, MAX_WORD_LENGTH);
+							strncpy(currentNode->column.table_name, currentNode->column.column_name, MAX_WORD_LENGTH);
+							strncpy(currentNode->column.column_name, tokenCursol->word, MAX_WORD_LENGTH);
 							++tokenCursol;
 						}
 						else{
@@ -765,9 +766,9 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					currentNode->value = { STRING,{ "" } };
 
 					// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
-					strncpy(currentNode->value.string, tokenCursol->word + 1, std::min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
-					currentNode->value.string[MAX_DATA_LENGTH - 1] = '\0';
-					currentNode->value.string[strlen(currentNode->value.string) - 1] = '\0';
+					strncpy(currentNode->value.string_data, tokenCursol->word + 1, std::min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
+					currentNode->value.string_data[MAX_DATA_LENGTH - 1] = '\0';
+					currentNode->value.string_data[strlen(currentNode->value.string_data) - 1] = '\0';
 					++tokenCursol;
 				}
 				else{
@@ -934,8 +935,8 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					error = ERR_MEMORY_OVER;
 					goto ERROR;
 				}
-				strncpy(inputColumns[i][inputColumnNums[i]].tableName, tableNames[i], MAX_WORD_LENGTH);
-				char *writeCursol = inputColumns[i][inputColumnNums[i]++].columnName; // 列名の書き込みに利用するカーソルです。
+				strncpy(inputColumns[i][inputColumnNums[i]].table_name, tableNames[i], MAX_WORD_LENGTH);
+				char *writeCursol = inputColumns[i][inputColumnNums[i]++].column_name; // 列名の書き込みに利用するカーソルです。
 
 				// 列名を一つ読みます。
 				while (*charactorCursol && *charactorCursol != ',' && *charactorCursol != '\r'&& *charactorCursol != '\n'){
@@ -987,7 +988,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					goto ERROR;
 				}
 				*row[columnNum] = { STRING, { "" } };
-				char *writeCursol = row[columnNum++]->string; // データ文字列の書き込みに利用するカーソルです。
+				char *writeCursol = row[columnNum++]->string_data; // データ文字列の書き込みに利用するカーソルです。
 
 				// データ文字列を一つ読みます。
 				while (*charactorCursol && *charactorCursol != ',' && *charactorCursol != '\r'&& *charactorCursol != '\n'){
@@ -1008,7 +1009,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 			current_row = input_data[i];
 			found = false;
 			while (*current_row){
-				char *currentChar = (*current_row)[j]->string;
+				char *currentChar = (*current_row)[j]->string_data;
 				while (*currentChar){
 					bool isNum = false;
 					const char *currentNum = SIGNED_AND_NUMBER;
@@ -1035,7 +1036,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 			if (!found){
 				current_row = input_data[i];
 				while (*current_row){
-					int integer_data = atoi((*current_row)[j]->string);
+					int integer_data = atoi((*current_row)[j]->string_data);
 					*(*current_row)[j] = {INTEGER, { ""  } };
 					(*current_row)[j]->integer = integer_data;
 					++current_row;
@@ -1055,16 +1056,16 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 	// 入力ファイルに書いてあったすべての列をallInputColumnsに設定します。
 	for (int i = 0; i < tableNamesNum; ++i){
 		for (int j = 0; j < inputColumnNums[i]; ++j){
-			strncpy(allInputColumns[allInputColumnsNum].tableName, tableNames[i], MAX_WORD_LENGTH);
-			strncpy(allInputColumns[allInputColumnsNum++].columnName, inputColumns[i][j].columnName, MAX_WORD_LENGTH);
+			strncpy(allInputColumns[allInputColumnsNum].table_name, tableNames[i], MAX_WORD_LENGTH);
+			strncpy(allInputColumns[allInputColumnsNum++].column_name, inputColumns[i][j].column_name, MAX_WORD_LENGTH);
 		}
 	}
 
 	// SELECT句の列名指定が*だった場合は、入力CSVの列名がすべて選択されます。
 	if (!selectColumnsNum){
 		for (int i = 0; i < allInputColumnsNum; ++i){
-			strncpy(selectColumns[selectColumnsNum].tableName, allInputColumns[i].tableName, MAX_WORD_LENGTH);
-			strncpy(selectColumns[selectColumnsNum++].columnName, allInputColumns[i].columnName, MAX_WORD_LENGTH);
+			strncpy(selectColumns[selectColumnsNum].table_name, allInputColumns[i].table_name, MAX_WORD_LENGTH);
+			strncpy(selectColumns[selectColumnsNum++].column_name, allInputColumns[i].column_name, MAX_WORD_LENGTH);
 		}
 	}
 
@@ -1078,18 +1079,18 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 		found = false;
 		for (int j = 0; j < tableNamesNum; ++j){
 			for (int k = 0; k < inputColumnNums[j]; ++k){
-				char* selectTableNameCursol = selectColumns[i].tableName;
-				char* inputTableNameCursol = inputColumns[j][k].tableName;
+				char* selectTableNameCursol = selectColumns[i].table_name;
+				char* inputTableNameCursol = inputColumns[j][k].table_name;
 				while (*selectTableNameCursol && toupper(*selectTableNameCursol) == toupper(*inputTableNameCursol++)){
 					++selectTableNameCursol;
 				}
-				char* selectColumnNameCursol = selectColumns[i].columnName;
-				char* inputColumnNameCursol = inputColumns[j][k].columnName;
+				char* selectColumnNameCursol = selectColumns[i].column_name;
+				char* inputColumnNameCursol = inputColumns[j][k].column_name;
 				while (*selectColumnNameCursol && toupper(*selectColumnNameCursol) == toupper(*inputColumnNameCursol++)){
 					++selectColumnNameCursol;
 				}
 				if (!*selectColumnNameCursol && !*inputColumnNameCursol &&
-					(!*selectColumns[i].tableName || // テーブル名が設定されている場合のみテーブル名の比較を行います。
+					(!*selectColumns[i].table_name || // テーブル名が設定されている場合のみテーブル名の比較を行います。
 					!*selectTableNameCursol && !*inputTableNameCursol)){
 
 					// 既に見つかっているのにもう一つ見つかったらエラーです。
@@ -1116,8 +1117,8 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 
 	// 出力する列名を設定します。
 	for (int i = 0; i < selectColumnsNum; ++i){
-		strncpy(outputColumns[outputColumnNum].tableName, inputColumns[selectColumnIndexes[i].table][selectColumnIndexes[i].column].tableName, MAX_WORD_LENGTH);
-		strncpy(outputColumns[outputColumnNum].columnName, inputColumns[selectColumnIndexes[i].table][selectColumnIndexes[i].column].columnName, MAX_WORD_LENGTH);
+		strncpy(outputColumns[outputColumnNum].table_name, inputColumns[selectColumnIndexes[i].table][selectColumnIndexes[i].column].table_name, MAX_WORD_LENGTH);
+		strncpy(outputColumns[outputColumnNum].column_name, inputColumns[selectColumnIndexes[i].table][selectColumnIndexes[i].column].column_name, MAX_WORD_LENGTH);
 		++outputColumnNum;
 	}
 
@@ -1125,7 +1126,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 		// 既存数値の符号を計算します。
 		for (int i = 0; i < whereExtensionNodesNum; ++i){
 			if (whereExtensionNodes[i].middle_operator.kind == NOT_TOKEN &&
-				!*whereExtensionNodes[i].column.columnName &&
+				!*whereExtensionNodes[i].column.column_name &&
 				whereExtensionNodes[i].value.type == INTEGER){
 				whereExtensionNodes[i].value.integer *= whereExtensionNodes[i].signCoefficient;
 			}
@@ -1209,21 +1210,21 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					// ノードにデータが設定されている場合です。
 
 					// データが列名で指定されている場合、今扱っている行のデータを設定します。
-					if (*currentNode->column.columnName){
+					if (*currentNode->column.column_name){
 						found = false;
 						for (int i = 0; i < allInputColumnsNum; ++i){
-							char* whereTableNameCursol = currentNode->column.tableName;
-							char* allInputTableNameCursol = allInputColumns[i].tableName;
+							char* whereTableNameCursol = currentNode->column.table_name;
+							char* allInputTableNameCursol = allInputColumns[i].table_name;
 							while (*whereTableNameCursol && toupper(*whereTableNameCursol) == toupper(*allInputTableNameCursol++)){
 								++whereTableNameCursol;
 							}
-							char* whereColumnNameCursol = currentNode->column.columnName;
-							char* allInputColumnNameCursol = allInputColumns[i].columnName;
+							char* whereColumnNameCursol = currentNode->column.column_name;
+							char* allInputColumnNameCursol = allInputColumns[i].column_name;
 							while (*whereColumnNameCursol && toupper(*whereColumnNameCursol) == toupper(*allInputColumnNameCursol++)){
 								++whereColumnNameCursol;
 							}
 							if (!*whereColumnNameCursol && !*allInputColumnNameCursol &&
-								(!*currentNode->column.tableName || // テーブル名が設定されている場合のみテーブル名の比較を行います。
+								(!*currentNode->column.table_name || // テーブル名が設定されている場合のみテーブル名の比較を行います。
 								!*whereTableNameCursol && !*allInputTableNameCursol)){
 								// 既に見つかっているのにもう一つ見つかったらエラーです。
 								if (found){
@@ -1289,22 +1290,22 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					case STRING:
 						switch (currentNode->middle_operator.kind){
 						case EQUAL:
-							currentNode->value.boolean = strcmp(currentNode->left->value.string, currentNode->right->value.string) == 0;
+							currentNode->value.boolean = strcmp(currentNode->left->value.string_data, currentNode->right->value.string_data) == 0;
 							break;
 						case GREATER_THAN:
-							currentNode->value.boolean = strcmp(currentNode->left->value.string, currentNode->right->value.string) > 0;
+							currentNode->value.boolean = strcmp(currentNode->left->value.string_data, currentNode->right->value.string_data) > 0;
 							break;
 						case GREATER_THAN_OR_EQUAL:
-							currentNode->value.boolean = strcmp(currentNode->left->value.string, currentNode->right->value.string) >= 0;
+							currentNode->value.boolean = strcmp(currentNode->left->value.string_data, currentNode->right->value.string_data) >= 0;
 							break;
 						case LESS_THAN:
-							currentNode->value.boolean = strcmp(currentNode->left->value.string, currentNode->right->value.string) < 0;
+							currentNode->value.boolean = strcmp(currentNode->left->value.string_data, currentNode->right->value.string_data) < 0;
 							break;
 						case LESS_THAN_OR_EQUAL:
-							currentNode->value.boolean = strcmp(currentNode->left->value.string, currentNode->right->value.string) <= 0;
+							currentNode->value.boolean = strcmp(currentNode->left->value.string_data, currentNode->right->value.string_data) <= 0;
 							break;
 						case NOT_EQUAL:
-							currentNode->value.boolean = strcmp(currentNode->left->value.string, currentNode->right->value.string) != 0;
+							currentNode->value.boolean = strcmp(currentNode->left->value.string_data, currentNode->right->value.string_data) != 0;
 							break;
 						}
 						break;
@@ -1404,20 +1405,20 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 		for (int i = 0; i < orderByColumnsNum; ++i){
 			found = false;
 			for (int j = 0; j < allInputColumnsNum; ++j){
-				char* orderByTableNameCursol = orderByColumns[i].tableName;
-				char* allInputTableNameCursol = allInputColumns[j].tableName;
+				char* orderByTableNameCursol = orderByColumns[i].table_name;
+				char* allInputTableNameCursol = allInputColumns[j].table_name;
 				while (*orderByTableNameCursol && toupper(*orderByTableNameCursol) == toupper(*allInputTableNameCursol)){
 					++orderByTableNameCursol;
 					++allInputTableNameCursol;
 				}
-				char* orderByColumnNameCursol = orderByColumns[i].columnName;
-				char* allInputColumnNameCursol = allInputColumns[j].columnName;
+				char* orderByColumnNameCursol = orderByColumns[i].column_name;
+				char* allInputColumnNameCursol = allInputColumns[j].column_name;
 				while (*orderByColumnNameCursol && toupper(*orderByColumnNameCursol) == toupper(*allInputColumnNameCursol)){
 					++orderByColumnNameCursol;
 					++allInputColumnNameCursol;
 				}
 				if (!*orderByColumnNameCursol && !*allInputColumnNameCursol &&
-					(!*orderByColumns[i].tableName || // テーブル名が設定されている場合のみテーブル名の比較を行います。
+					(!*orderByColumns[i].table_name || // テーブル名が設定されている場合のみテーブル名の比較を行います。
 					!*orderByTableNameCursol && !*allInputTableNameCursol)){
 					// 既に見つかっているのにもう一つ見つかったらエラーです。
 					if (found){
@@ -1454,7 +1455,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 						cmp = jData->integer - mData->integer;
 						break;
 					case STRING:
-						cmp = strcmp(jData->string, mData->string);
+						cmp = strcmp(jData->string_data, mData->string_data);
 						break;
 					}
 
@@ -1493,7 +1494,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 
 	// 出力ファイルに列名を出力します。
 	for (int i = 0; i < selectColumnsNum; ++i){
-		result = fputs(outputColumns[i].columnName, output_file);
+		result = fputs(outputColumns[i].column_name, output_file);
 		if (result == EOF){
 			error = ERR_FILE_WRITE;
 			goto ERROR;
@@ -1525,7 +1526,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 				itoa((*column)->integer, outputString, 10);
 				break;
 			case STRING:
-				strcpy(outputString, (*column)->string);
+				strcpy(outputString, (*column)->string_data);
 				break;
 			}
 			result = fputs(outputString, output_file);
