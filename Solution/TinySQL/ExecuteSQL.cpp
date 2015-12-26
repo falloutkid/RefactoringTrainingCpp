@@ -4,9 +4,10 @@
 #include "stdbool.h"
 #include "stdlib.h"
 #include "ctype.h"
+#include "Data.h"
 
 #include <iostream>
-#include <string>
+//#include <string>
 #include <algorithm>
 
 #pragma warning(disable:4996)
@@ -22,10 +23,6 @@ namespace {
 	const int MAX_EXTENSION_TREE_NODE_COUNT = 256;
 	//!< SQLに含まれるトークンの最大値です。
 	const int MAX_TOKEN_COUNT = 255;
-	//!< 入出力されるデータの、各列の最大長です。
-	const int MAX_DATA_LENGTH = 256;
-	//!< SQLの一語の最大長です。
-	const int MAX_WORD_LENGTH = 256;
 	//!< 読み込むファイルの一行の最大長です。
 	const int MAX_FILE_LINE_LENGTH = 4096;
 	// 全てのアルファベットの大文字小文字とアンダーバーです。
@@ -63,14 +60,6 @@ enum RESULT_VALUE
 	ERR_MEMORY_OVER = 10        //!< 用意したメモリ領域の上限を超えました。
 };
 
-//! 入力や出力、経過の計算に利用するデータのデータ型の種類を表します。
-enum DATA_TYPE
-{
-	STRING,   //!< 文字列型です。
-	INTEGER,  //!< 整数型です。
-	BOOLEAN   //!< 真偽値型です。
-};
-
 //! トークンの種類を表します。
 enum TOKEN_KIND
 {
@@ -102,36 +91,6 @@ enum TOKEN_KIND
 	INT_LITERAL,            //!< 整数リテラルです。
 	STRING_LITERAL          //!< 文字列リテラルです。
 };
-
-//! 一つの値を持つデータです。
-class Data
-{
-public:
-	Data();
-	Data(const int init_data);
-	Data(const bool init_data);
-	Data(const char* init_data);
-
-	enum DATA_TYPE type; //!< データの型です。
-	
-	char string_data[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
-	int integer;                  //!< データが整数型の場合の値です。
-	bool boolean;                 //!< データが真偽値型の場合の値です。
-};
-
-Data::Data():string_data("")
-{
-	type = DATA_TYPE::STRING;
-}
-
-Data::Data(const int init_data): string_data(""),integer(init_data),type(DATA_TYPE::INTEGER)
-{}
-Data::Data(const bool init_data) : string_data(""), boolean(init_data), type(DATA_TYPE::BOOLEAN)
-{}
-Data::Data(const char* init_data) : type(DATA_TYPE::STRING)
-{
-	strncpy(string_data, init_data, std::max(MAX_DATA_LENGTH, MAX_WORD_LENGTH));
-}
 
 //! WHERE句に指定する演算子の情報を表します。
 class Operator
