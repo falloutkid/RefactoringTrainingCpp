@@ -7,9 +7,9 @@
 
 #include "Data.h"
 #include "Operator.h"
+#include "Token.h"
 
 #include <iostream>
-//#include <string>
 #include <algorithm>
 
 #pragma warning(disable:4996)
@@ -60,14 +60,6 @@ enum RESULT_VALUE
 	ERR_CSV_SYNTAX = 8,         //!< CSVの構文解析が失敗しました。
 	ERR_MEMORY_ALLOCATE = 9,    //!< メモリの取得に失敗しました。
 	ERR_MEMORY_OVER = 10        //!< 用意したメモリ領域の上限を超えました。
-};
-
-//! トークンを表します。
-class Token
-{
-public:
-	enum TOKEN_KIND kind; //!< トークンの種類です。
-	char word[MAX_WORD_LENGTH]; //!< 記録されているトークンの文字列です。記録の必要がなければ空白です。
 };
 
 //! 指定された列の情報です。どのテーブルに所属するかの情報も含みます。 
@@ -292,7 +284,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 						error = ERR_MEMORY_OVER;
 						goto ERROR;
 					}
-					literal.word[wordLength++] = *search;
+					literal.word_[wordLength++] = *search;
 					++charactorCursol;
 				}
 			} while (*search);
@@ -300,7 +292,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 			// 数字の後にすぐに識別子が続くのは紛らわしいので数値リテラルとは扱いません。
 			for (search = ALPHABET_AND_UNDERBAR; *search && *charactorCursol != *search; ++search){}
 			if (!*search){
-				literal.word[wordLength] = '\0';
+				literal.word_[wordLength] = '\0';
 				if (MAX_TOKEN_COUNT <= tokensNum){
 					error = ERR_MEMORY_OVER;
 					goto ERROR;
@@ -328,7 +320,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					error = ERR_MEMORY_OVER;
 					goto ERROR;
 				}
-				literal.word[wordLength++] = *charactorCursol++;
+				literal.word_[wordLength++] = *charactorCursol++;
 			}
 			if (*charactorCursol == "\'"[0]){
 				if (MAX_WORD_LENGTH - 1 <= wordLength){
@@ -336,10 +328,10 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					goto ERROR;
 				}
 				// 最後のシングルクォートを読み込みます。
-				literal.word[wordLength++] = *charactorCursol++;
+				literal.word_[wordLength++] = *charactorCursol++;
 
 				// 文字列の終端文字をつけます。
-				literal.word[wordLength] = '\0';
+				literal.word_[wordLength] = '\0';
 				if (MAX_TOKEN_COUNT <= tokensNum){
 					error = ERR_MEMORY_OVER;
 					goto ERROR;
@@ -358,7 +350,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 		for (size_t i = 0; i < sizeof(KEYWORD_CONDITIONS) / sizeof(KEYWORD_CONDITIONS[0]); ++i){
 			charactorBackPoint = charactorCursol;
 			Token condition = KEYWORD_CONDITIONS[i]; // 確認するキーワードの条件です。
-			char *wordCursol = condition.word; // 確認するキーワードの文字列のうち、現在確認している一文字を指します。
+			char *wordCursol = condition.word_; // 確認するキーワードの文字列のうち、現在確認している一文字を指します。
 
 			// キーワードが指定した文字列となっているか確認します。
 			while (*wordCursol && toupper(*charactorCursol++) == *wordCursol){
@@ -375,7 +367,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					error = ERR_MEMORY_OVER;
 					goto ERROR;
 				}
-				tokens[tokensNum++] = { condition.kind, "" };
+				tokens[tokensNum++] = { condition.kind_, "" };
 				found = true;
 			}
 			else{
@@ -391,7 +383,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 		for (size_t i = 0; i < sizeof(SIGN_CONDITIONS) / sizeof(Token); ++i){
 			charactorBackPoint = charactorCursol;
 			Token condition = SIGN_CONDITIONS[i]; // 確認する記号の条件です。
-			char *wordCursol = condition.word; // 確認する記号の文字列のうち、現在確認している一文字を指します。
+			char *wordCursol = condition.word_; // 確認する記号の文字列のうち、現在確認している一文字を指します。
 
 			// 記号が指定した文字列となっているか確認します。
 			while (*wordCursol && toupper(*charactorCursol++) == *wordCursol){
@@ -404,7 +396,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					error = ERR_MEMORY_OVER;
 					goto ERROR;
 				}
-				tokens[tokensNum++] = { condition.kind, "" };
+				tokens[tokensNum++] = { condition.kind_, "" };
 				found = true;
 			}
 			else{
@@ -430,13 +422,13 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 						error = ERR_MEMORY_OVER;
 						goto ERROR;
 					}
-					identifier.word[wordLength++] = *search;
+					identifier.word_[wordLength++] = *search;
 					charactorCursol++;
 				}
 			} while (*search);
 
 			// 識別子の文字列の終端文字を設定します。
-			identifier.word[wordLength] = '\0';
+			identifier.word_[wordLength] = '\0';
 
 			// 読み込んだ識別子を登録します。
 			if (MAX_TOKEN_COUNT <= tokensNum){
@@ -500,7 +492,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 	// SQLの構文を解析し、必要な情報を取得します。
 
 	// SELECT句を読み込みます。
-	if (tokenCursol->kind == SELECT){
+	if (tokenCursol->kind_ == SELECT){
 		++tokenCursol;
 	}
 	else{
@@ -508,32 +500,32 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 		goto ERROR;
 	}
 
-	if (tokenCursol->kind == ASTERISK){
+	if (tokenCursol->kind_ == ASTERISK){
 		++tokenCursol;
 	}
 	else
 	{
 		bool first = true; // SELECT句に最初に指定された列名の読み込みかどうかです。
-		while (tokenCursol->kind == COMMA || first){
-			if (tokenCursol->kind == COMMA){
+		while (tokenCursol->kind_ == COMMA || first){
+			if (tokenCursol->kind_ == COMMA){
 				++tokenCursol;
 			}
-			if (tokenCursol->kind == IDENTIFIER){
+			if (tokenCursol->kind_ == IDENTIFIER){
 				if (MAX_COLUMN_COUNT <= selectColumnsNum){
 					error = ERR_MEMORY_OVER;
 					goto ERROR;
 				}
 				// テーブル名が指定されていない場合と仮定して読み込みます。
 				strncpy(selectColumns[selectColumnsNum].table_name, "", MAX_WORD_LENGTH);
-				strncpy(selectColumns[selectColumnsNum].column_name, tokenCursol->word, MAX_WORD_LENGTH);
+				strncpy(selectColumns[selectColumnsNum].column_name, tokenCursol->word_, MAX_WORD_LENGTH);
 				++tokenCursol;
-				if (tokenCursol->kind == DOT){
+				if (tokenCursol->kind_ == DOT){
 					++tokenCursol;
-					if (tokenCursol->kind == IDENTIFIER){
+					if (tokenCursol->kind_ == IDENTIFIER){
 
 						// テーブル名が指定されていることがわかったので読み替えます。
 						strncpy(selectColumns[selectColumnsNum].table_name, selectColumns[selectColumnsNum].column_name, MAX_WORD_LENGTH);
-						strncpy(selectColumns[selectColumnsNum].column_name, tokenCursol->word, MAX_WORD_LENGTH);
+						strncpy(selectColumns[selectColumnsNum].column_name, tokenCursol->word_, MAX_WORD_LENGTH);
 						++tokenCursol;
 					}
 					else{
@@ -554,46 +546,46 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 	// ORDER句とWHERE句を読み込みます。最大各一回ずつ書くことができます。
 	bool readOrder = false; // すでにORDER句が読み込み済みかどうかです。
 	bool readWhere = false; // すでにWHERE句が読み込み済みかどうかです。
-	while (tokenCursol->kind == ORDER || tokenCursol->kind == WHERE){
+	while (tokenCursol->kind_ == ORDER || tokenCursol->kind_ == WHERE){
 
 		// 二度目のORDER句はエラーです。
-		if (readOrder && tokenCursol->kind == ORDER){
+		if (readOrder && tokenCursol->kind_ == ORDER){
 			error = ERR_SQL_SYNTAX;
 			goto ERROR;
 		}
 
 		// 二度目のWHERE句はエラーです。
-		if (readWhere && tokenCursol->kind == WHERE){
+		if (readWhere && tokenCursol->kind_ == WHERE){
 			error = ERR_SQL_SYNTAX;
 			goto ERROR;
 		}
 		// ORDER句を読み込みます。
-		if (tokenCursol->kind == ORDER){
+		if (tokenCursol->kind_ == ORDER){
 			readOrder = true;
 			++tokenCursol;
-			if (tokenCursol->kind == BY){
+			if (tokenCursol->kind_ == BY){
 				++tokenCursol;
 				bool first = true; // ORDER句の最初の列名の読み込みかどうかです。
-				while (tokenCursol->kind == COMMA || first){
-					if (tokenCursol->kind == COMMA){
+				while (tokenCursol->kind_ == COMMA || first){
+					if (tokenCursol->kind_ == COMMA){
 						++tokenCursol;
 					}
-					if (tokenCursol->kind == IDENTIFIER){
+					if (tokenCursol->kind_ == IDENTIFIER){
 						if (MAX_COLUMN_COUNT <= orderByColumnsNum){
 							error = ERR_MEMORY_OVER;
 							goto ERROR;
 						}
 						// テーブル名が指定されていない場合と仮定して読み込みます。
 						strncpy(orderByColumns[orderByColumnsNum].table_name, "", MAX_WORD_LENGTH);
-						strncpy(orderByColumns[orderByColumnsNum].column_name, tokenCursol->word, MAX_WORD_LENGTH);
+						strncpy(orderByColumns[orderByColumnsNum].column_name, tokenCursol->word_, MAX_WORD_LENGTH);
 						++tokenCursol;
-						if (tokenCursol->kind == DOT){
+						if (tokenCursol->kind_ == DOT){
 							++tokenCursol;
-							if (tokenCursol->kind == IDENTIFIER){
+							if (tokenCursol->kind_ == IDENTIFIER){
 
 								// テーブル名が指定されていることがわかったので読み替えます。
 								strncpy(orderByColumns[orderByColumnsNum].table_name, orderByColumns[orderByColumnsNum].column_name, MAX_WORD_LENGTH);
-								strncpy(orderByColumns[orderByColumnsNum].column_name, tokenCursol->word, MAX_WORD_LENGTH);
+								strncpy(orderByColumns[orderByColumnsNum].column_name, tokenCursol->word_, MAX_WORD_LENGTH);
 								++tokenCursol;
 							}
 							else{
@@ -603,11 +595,11 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 						}
 
 						// 並び替えの昇順、降順を指定します。
-						if (tokenCursol->kind == ASC){
+						if (tokenCursol->kind_ == ASC){
 							orders[orderByColumnsNum] = ASC;
 							++tokenCursol;
 						}
-						else if (tokenCursol->kind == DESC){
+						else if (tokenCursol->kind_ == DESC){
 							orders[orderByColumnsNum] = DESC;
 							++tokenCursol;
 						}
@@ -631,7 +623,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 		}
 
 		// WHERE句を読み込みます。
-		if (tokenCursol->kind == WHERE){
+		if (tokenCursol->kind_ == WHERE){
 			readWhere = true;
 			++tokenCursol;
 			ExtensionTreeNode *currentNode = nullptr; // 現在読み込んでいるノードです。
@@ -655,39 +647,39 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 				}
 
 				// カッコ開くを読み込みます。
-				while (tokenCursol->kind == OPEN_PAREN){
+				while (tokenCursol->kind_ == OPEN_PAREN){
 					++currentNode->parenOpenBeforeClose;
 					++tokenCursol;
 				}
 
 				// オペランドに前置される+か-を読み込みます。
-				if (tokenCursol->kind == PLUS || tokenCursol->kind == MINUS){
+				if (tokenCursol->kind_ == PLUS || tokenCursol->kind_ == MINUS){
 
 					// +-を前置するのは列名と数値リテラルのみです。
-					if (tokenCursol[1].kind != IDENTIFIER && tokenCursol[1].kind != INT_LITERAL){
+					if (tokenCursol[1].kind_ != IDENTIFIER && tokenCursol[1].kind_ != INT_LITERAL){
 						error = ERR_WHERE_OPERAND_TYPE;
 						goto ERROR;
 					}
-					if (tokenCursol->kind == MINUS){
+					if (tokenCursol->kind_ == MINUS){
 						currentNode->signCoefficient = -1;
 					}
 					++tokenCursol;
 				}
 
 				// 列名、整数リテラル、文字列リテラルのいずれかをオペランドとして読み込みます。
-				if (tokenCursol->kind == IDENTIFIER){
+				if (tokenCursol->kind_ == IDENTIFIER){
 
 					// テーブル名が指定されていない場合と仮定して読み込みます。
 					strncpy(currentNode->column.table_name, "", MAX_WORD_LENGTH);
-					strncpy(currentNode->column.column_name, tokenCursol->word, MAX_WORD_LENGTH);
+					strncpy(currentNode->column.column_name, tokenCursol->word_, MAX_WORD_LENGTH);
 					++tokenCursol;
-					if (tokenCursol->kind == DOT){
+					if (tokenCursol->kind_ == DOT){
 						++tokenCursol;
-						if (tokenCursol->kind == IDENTIFIER){
+						if (tokenCursol->kind_ == IDENTIFIER){
 
 							// テーブル名が指定されていることがわかったので読み替えます。
 							strncpy(currentNode->column.table_name, currentNode->column.column_name, MAX_WORD_LENGTH);
-							strncpy(currentNode->column.column_name, tokenCursol->word, MAX_WORD_LENGTH);
+							strncpy(currentNode->column.column_name, tokenCursol->word_, MAX_WORD_LENGTH);
 							++tokenCursol;
 						}
 						else{
@@ -696,15 +688,15 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 						}
 					}
 				}
-				else if (tokenCursol->kind == INT_LITERAL){
-					currentNode->value = Data(atoi(tokenCursol->word));
+				else if (tokenCursol->kind_ == INT_LITERAL){
+					currentNode->value = Data(atoi(tokenCursol->word_));
 					++tokenCursol;
 				}
-				else if (tokenCursol->kind == STRING_LITERAL){
+				else if (tokenCursol->kind_ == STRING_LITERAL){
 					currentNode->value = Data("");
 
 					// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
-					strncpy(currentNode->value.string_data, tokenCursol->word + 1, std::min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
+					strncpy(currentNode->value.string_data, tokenCursol->word_ + 1, std::min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
 					currentNode->value.string_data[MAX_DATA_LENGTH - 1] = '\0';
 					currentNode->value.string_data[strlen(currentNode->value.string_data) - 1] = '\0';
 					++tokenCursol;
@@ -715,7 +707,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 				}
 
 				// オペランドの右のカッコ閉じるを読み込みます。
-				while (tokenCursol->kind == CLOSE_PAREN){
+				while (tokenCursol->kind_ == CLOSE_PAREN){
 					ExtensionTreeNode *searchedAncestor = currentNode->parent; // カッコ閉じると対応するカッコ開くを両方含む祖先ノードを探すためのカーソルです。
 					while (searchedAncestor){
 
@@ -744,7 +736,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 				// 現在見ている演算子の情報を探します。
 				found = false;
 				for (int j = 0; j < sizeof(OPERATOR_LIST) / sizeof(OPERATOR_LIST[0]); ++j){
-					if (OPERATOR_LIST[j].kind_ == tokenCursol->kind){
+					if (OPERATOR_LIST[j].kind_ == tokenCursol->kind_){
 						temporary_operator = OPERATOR_LIST[j];
 						found = true;
 						break;
@@ -804,7 +796,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 	}
 
 	// FROM句を読み込みます。
-	if (tokenCursol->kind == FROM){
+	if (tokenCursol->kind_ == FROM){
 		++tokenCursol;
 	}
 	else{
@@ -812,16 +804,16 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 		goto ERROR;
 	}
 	bool first = true; // FROM句の最初のテーブル名を読み込み中かどうかです。
-	while (tokenCursol->kind == COMMA || first){
-		if (tokenCursol->kind == COMMA){
+	while (tokenCursol->kind_ == COMMA || first){
+		if (tokenCursol->kind_ == COMMA){
 			++tokenCursol;
 		}
-		if (tokenCursol->kind == IDENTIFIER){
+		if (tokenCursol->kind_ == IDENTIFIER){
 			if (MAX_TABLE_COUNT <= tableNamesNum){
 				error = ERR_MEMORY_OVER;
 				goto ERROR;
 			}
-			strncpy(tableNames[tableNamesNum++], tokenCursol->word, MAX_WORD_LENGTH);
+			strncpy(tableNames[tableNamesNum++], tokenCursol->word_, MAX_WORD_LENGTH);
 			++tokenCursol;
 		}
 		else{
