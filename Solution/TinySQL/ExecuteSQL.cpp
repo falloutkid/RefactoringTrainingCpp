@@ -4,7 +4,9 @@
 #include "stdbool.h"
 #include "stdlib.h"
 #include "ctype.h"
+
 #include "Data.h"
+#include "Operator.h"
 
 #include <iostream>
 //#include <string>
@@ -60,46 +62,6 @@ enum RESULT_VALUE
 	ERR_MEMORY_OVER = 10        //!< 用意したメモリ領域の上限を超えました。
 };
 
-//! トークンの種類を表します。
-enum TOKEN_KIND
-{
-	NOT_TOKEN,              //!< トークンを表しません。
-	ASC,                    //!< ASCキーワードです。
-	AND,                    //!< ANDキーワードです。
-	BY,                     //!< BYキーワードです。
-	DESC,                   //!< DESCキーワードです。
-	FROM,                   //!< FROMキーワードです。
-	OR,                     //!< ORキーワードです。
-	ORDER,                  //!< ORDERキーワードです。
-	SELECT,                 //!< SELECTキーワードです。
-	WHERE,                  //!< WHEREキーワードです。
-	ASTERISK,               //!< ＊ 記号です。
-	COMMA,                  //!< ， 記号です。
-	CLOSE_PAREN,            //!< ） 記号です。
-	DOT,                    //!< ． 記号です。
-	EQUAL,                  //!< ＝ 記号です。
-	GREATER_THAN,           //!< ＞ 記号です。
-	GREATER_THAN_OR_EQUAL,  //!< ＞＝ 記号です。
-	LESS_THAN,              //!< ＜ 記号です。
-	LESS_THAN_OR_EQUAL,     //!< ＜＝ 記号です。
-	MINUS,                  //!< － 記号です。
-	NOT_EQUAL,              //!< ＜＞ 記号です。
-	OPEN_PAREN,             //!< （ 記号です。
-	PLUS,                   //!< ＋ 記号です。
-	SLASH,                  //!< ／ 記号です。
-	IDENTIFIER,             //!< 識別子です。
-	INT_LITERAL,            //!< 整数リテラルです。
-	STRING_LITERAL          //!< 文字列リテラルです。
-};
-
-//! WHERE句に指定する演算子の情報を表します。
-class Operator
-{
-public:
-	enum TOKEN_KIND kind; //!< 演算子の種類を、演算子を記述するトークンの種類で表します。
-	int order; //!< 演算子の優先順位です。
-};
-
 //! トークンを表します。
 class Token
 {
@@ -146,18 +108,18 @@ namespace {
 	// 演算子の情報です。
 	const Operator OPERATOR_LIST[] =
 	{
-		{ ASTERISK, 1 },
-		{ SLASH, 1 },
-		{ PLUS, 2 },
-		{ MINUS, 2 },
-		{ EQUAL, 3 },
-		{ GREATER_THAN, 3 },
-		{ GREATER_THAN_OR_EQUAL, 3 },
-		{ LESS_THAN, 3 },
-		{ LESS_THAN_OR_EQUAL, 3 },
-		{ NOT_EQUAL, 3 },
-		{ AND, 4 },
-		{ OR, 5 },
+		Operator( ASTERISK, 1 ),
+		Operator( SLASH, 1),
+		Operator( PLUS, 2),
+		Operator( MINUS, 2),
+		Operator( EQUAL, 3),
+		Operator( GREATER_THAN, 3),
+		Operator( GREATER_THAN_OR_EQUAL, 3),
+		Operator( LESS_THAN, 3),
+		Operator( LESS_THAN_OR_EQUAL, 3),
+		Operator( NOT_EQUAL, 3),
+		Operator( AND, 4),
+		Operator( OR, 5),
 	};
 
 	// キーワードをトークンとして認識するためのキーワード一覧情報です。
@@ -777,12 +739,12 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 
 
 				// 演算子(オペレーターを読み込みます。
-				Operator temporary_operator ={NOT_TOKEN, 0 }; // 現在読み込んでいる演算子の情報です。
+				Operator temporary_operator = Operator(NOT_TOKEN, 0 ); // 現在読み込んでいる演算子の情報です。
 
 				// 現在見ている演算子の情報を探します。
 				found = false;
 				for (int j = 0; j < sizeof(OPERATOR_LIST) / sizeof(OPERATOR_LIST[0]); ++j){
-					if (OPERATOR_LIST[j].kind == tokenCursol->kind){
+					if (OPERATOR_LIST[j].kind_ == tokenCursol->kind){
 						temporary_operator = OPERATOR_LIST[j];
 						found = true;
 						break;
@@ -807,7 +769,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 							searched = searched->left;
 						}
 						first = false;
-					} while (!searched && tmp->parent && (tmp->parent->middle_operator.order <= temporary_operator.order || tmp->parent->inParen));
+					} while (!searched && tmp->parent && (tmp->parent->middle_operator.order_ <= temporary_operator.order_ || tmp->parent->inParen));
 
 					// 演算子のノードを新しく生成します。
 					if (MAX_EXTENSION_TREE_NODE_COUNT <= whereExtensionNodesNum){
@@ -1099,7 +1061,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 	if (whereTopNode){
 		// 既存数値の符号を計算します。
 		for (int i = 0; i < whereExtensionNodesNum; ++i){
-			if (whereExtensionNodes[i].middle_operator.kind == NOT_TOKEN &&
+			if (whereExtensionNodes[i].middle_operator.kind_ == NOT_TOKEN &&
 				!*whereExtensionNodes[i].column.column_name &&
 				whereExtensionNodes[i].value.type == INTEGER){
 				whereExtensionNodes[i].value.integer *= whereExtensionNodes[i].signCoefficient;
@@ -1179,7 +1141,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 				}
 
 				// 自ノードの値を計算します。
-				switch (currentNode->middle_operator.kind){
+				switch (currentNode->middle_operator.kind_){
 				case NOT_TOKEN:
 					// ノードにデータが設定されている場合です。
 
@@ -1240,7 +1202,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					// 比較結果を型と演算子によって計算方法を変えて、計算します。
 					switch (currentNode->left->value.type){
 					case INTEGER:
-						switch (currentNode->middle_operator.kind){
+						switch (currentNode->middle_operator.kind_){
 						case EQUAL:
 							currentNode->value.boolean = currentNode->left->value.integer == currentNode->right->value.integer;
 							break;
@@ -1262,7 +1224,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 						}
 						break;
 					case STRING:
-						switch (currentNode->middle_operator.kind){
+						switch (currentNode->middle_operator.kind_){
 						case EQUAL:
 							currentNode->value.boolean = strcmp(currentNode->left->value.string_data, currentNode->right->value.string_data) == 0;
 							break;
@@ -1299,7 +1261,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					currentNode->value.type = INTEGER;
 
 					// 比較結果を演算子によって計算方法を変えて、計算します。
-					switch (currentNode->middle_operator.kind){
+					switch (currentNode->middle_operator.kind_){
 					case PLUS:
 						currentNode->value.integer = currentNode->left->value.integer + currentNode->right->value.integer;
 						break;
@@ -1326,7 +1288,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					currentNode->value.type = BOOLEAN;
 
 					// 比較結果を演算子によって計算方法を変えて、計算します。
-					switch (currentNode->middle_operator.kind){
+					switch (currentNode->middle_operator.kind_){
 					case AND:
 						currentNode->value.boolean = currentNode->left->value.boolean && currentNode->right->value.boolean;
 						break;
