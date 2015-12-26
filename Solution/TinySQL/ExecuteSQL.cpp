@@ -107,12 +107,31 @@ enum TOKEN_KIND
 class Data
 {
 public:
+	Data();
+	Data(const int init_data);
+	Data(const bool init_data);
+	Data(const char* init_data);
+
 	enum DATA_TYPE type; //!< データの型です。
 	
 	char string_data[MAX_DATA_LENGTH]; //!< データが文字列型の場合の値です。
 	int integer;                  //!< データが整数型の場合の値です。
 	bool boolean;                 //!< データが真偽値型の場合の値です。
 };
+
+Data::Data():string_data("")
+{
+	type = DATA_TYPE::STRING;
+}
+
+Data::Data(const int init_data): string_data(""),integer(init_data),type(DATA_TYPE::INTEGER)
+{}
+Data::Data(const bool init_data) : string_data(""), boolean(init_data), type(DATA_TYPE::BOOLEAN)
+{}
+Data::Data(const char* init_data) : type(DATA_TYPE::STRING)
+{
+	strncpy(string_data, init_data, std::max(MAX_DATA_LENGTH, MAX_WORD_LENGTH));
+}
 
 //! WHERE句に指定する演算子の情報を表します。
 class Operator
@@ -550,7 +569,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 			1,
 			{"", "" },
 			false,
-			{STRING, {"" } },
+			Data(),
 		};
 	}
 	int whereExtensionNodesNum = 0; // 現在読み込まれているのwhereExtensionNodesの数です。
@@ -757,13 +776,11 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					}
 				}
 				else if (tokenCursol->kind == INT_LITERAL){
-					int integer_data = atoi(tokenCursol->word);
-					currentNode->value = { INTEGER, { "" } };
-					currentNode->value.integer = integer_data;
+					currentNode->value = Data(atoi(tokenCursol->word));
 					++tokenCursol;
 				}
 				else if (tokenCursol->kind == STRING_LITERAL){
-					currentNode->value = { STRING,{ "" } };
+					currentNode->value = Data("");
 
 					// 前後のシングルクォートを取り去った文字列をデータとして読み込みます。
 					strncpy(currentNode->value.string_data, tokenCursol->word + 1, std::min(MAX_WORD_LENGTH, MAX_DATA_LENGTH));
@@ -987,7 +1004,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 					error = ERR_MEMORY_ALLOCATE;
 					goto ERROR;
 				}
-				*row[columnNum] = { STRING, { "" } };
+				*row[columnNum] =Data("");
 				char *writeCursol = row[columnNum++]->string_data; // データ文字列の書き込みに利用するカーソルです。
 
 				// データ文字列を一つ読みます。
@@ -1036,9 +1053,7 @@ int ExecuteSQL(const char* sql, const char* output_file_name)
 			if (!found){
 				current_row = input_data[i];
 				while (*current_row){
-					int integer_data = atoi((*current_row)[j]->string_data);
-					*(*current_row)[j] = {INTEGER, { ""  } };
-					(*current_row)[j]->integer = integer_data;
+					*(*current_row)[j] = Data(atoi((*current_row)[j]->string_data));
 					++current_row;
 				}
 			}
